@@ -7,6 +7,8 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from app.ai.errors import AllProvidersFailedError, ProviderNotConfiguredError
+from app.exports.exporter import ExportError
+from app.generation.context import GenerationError
 from app.services.analyze import ModeNotSupportedError
 
 logger = logging.getLogger(__name__)
@@ -39,6 +41,14 @@ def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(ModeNotSupportedError)
     async def _mode(_: Request, exc: ModeNotSupportedError):
         return _resp(501, "mode_not_supported", str(exc))
+
+    @app.exception_handler(ExportError)
+    async def _export(_: Request, exc: ExportError):
+        return _resp(422, "export_error", str(exc))
+
+    @app.exception_handler(GenerationError)
+    async def _generation(_: Request, exc: GenerationError):
+        return _resp(422, "generation_error", str(exc))
 
     @app.exception_handler(Exception)
     async def _unhandled(_: Request, exc: Exception):

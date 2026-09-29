@@ -1,0 +1,456 @@
+{
+ "plan_version": "1.0",
+ "source_mode": "prompt",
+ "domain": "healthcare",
+ "summary": "Synthetic hospital appointment dataset containing patients, doctors, and appointments.",
+ "locale": "en_US",
+ "seed": null,
+ "tables": [
+  {
+   "name": "patients",
+   "description": "Hospital patients",
+   "target_rows": 1000,
+   "columns": [
+    {
+     "name": "patient_id",
+     "data_type": "uuid",
+     "semantic_type": "identifier",
+     "description": "Primary key for patients",
+     "nullable": false,
+     "is_primary_key": true,
+     "is_unique": true,
+     "allowed_values": null,
+     "generator": {
+      "strategy": "deterministic_id",
+      "generator": "uuid4",
+      "params": {},
+      "depends_on": []
+     },
+     "pii": {
+      "classification": "none",
+      "privacy_action": "none",
+      "reason": "System identifier"
+     },
+     "confidence": 1.0
+    },
+    {
+     "name": "full_name",
+     "data_type": "string",
+     "semantic_type": "person_name",
+     "description": "Patient's full name",
+     "nullable": false,
+     "is_primary_key": false,
+     "is_unique": false,
+     "allowed_values": null,
+     "generator": {
+      "strategy": "faker",
+      "generator": "name",
+      "params": {},
+      "depends_on": []
+     },
+     "pii": {
+      "classification": "direct_identifier",
+      "privacy_action": "synthesize",
+      "reason": "Names are direct identifiers"
+     },
+     "confidence": 1.0
+    },
+    {
+     "name": "email",
+     "data_type": "string",
+     "semantic_type": "email",
+     "description": "Patient's email address",
+     "nullable": false,
+     "is_primary_key": false,
+     "is_unique": false,
+     "allowed_values": null,
+     "generator": {
+      "strategy": "derived",
+      "generator": null,
+      "params": {},
+      "depends_on": [
+       "full_name"
+      ]
+     },
+     "pii": {
+      "classification": "direct_identifier",
+      "privacy_action": "synthesize",
+      "reason": "Email is a direct identifier"
+     },
+     "confidence": 1.0
+    },
+    {
+     "name": "phone_number",
+     "data_type": "string",
+     "semantic_type": "phone_number",
+     "description": "Patient's contact number",
+     "nullable": true,
+     "is_primary_key": false,
+     "is_unique": false,
+     "allowed_values": null,
+     "generator": {
+      "strategy": "faker",
+      "generator": "phone_number",
+      "params": {},
+      "depends_on": []
+     },
+     "pii": {
+      "classification": "direct_identifier",
+      "privacy_action": "synthesize",
+      "reason": "Phone number is a direct identifier"
+     },
+     "confidence": 1.0
+    },
+    {
+     "name": "date_of_birth",
+     "data_type": "date",
+     "semantic_type": "birth_date",
+     "description": "Patient's date of birth",
+     "nullable": false,
+     "is_primary_key": false,
+     "is_unique": false,
+     "allowed_values": null,
+     "generator": {
+      "strategy": "faker",
+      "generator": "date_between",
+      "params": {
+       "start_date": "-80y",
+       "end_date": "-18y"
+      },
+      "depends_on": []
+     },
+     "pii": {
+      "classification": "quasi_identifier",
+      "privacy_action": "synthesize",
+      "reason": "DOB is a quasi-identifier"
+     },
+     "confidence": 1.0
+    }
+   ],
+   "primary_key": [
+    "patient_id"
+   ],
+   "foreign_keys": []
+  },
+  {
+   "name": "doctors",
+   "description": "Hospital doctors",
+   "target_rows": 100,
+   "columns": [
+    {
+     "name": "doctor_id",
+     "data_type": "uuid",
+     "semantic_type": "identifier",
+     "description": "Primary key for doctors",
+     "nullable": false,
+     "is_primary_key": true,
+     "is_unique": true,
+     "allowed_values": null,
+     "generator": {
+      "strategy": "deterministic_id",
+      "generator": "uuid4",
+      "params": {},
+      "depends_on": []
+     },
+     "pii": {
+      "classification": "none",
+      "privacy_action": "none",
+      "reason": "System identifier"
+     },
+     "confidence": 1.0
+    },
+    {
+     "name": "full_name",
+     "data_type": "string",
+     "semantic_type": "person_name",
+     "description": "Doctor's full name",
+     "nullable": false,
+     "is_primary_key": false,
+     "is_unique": false,
+     "allowed_values": null,
+     "generator": {
+      "strategy": "faker",
+      "generator": "name",
+      "params": {},
+      "depends_on": []
+     },
+     "pii": {
+      "classification": "direct_identifier",
+      "privacy_action": "synthesize",
+      "reason": "Names are direct identifiers"
+     },
+     "confidence": 1.0
+    },
+    {
+     "name": "specialty",
+     "data_type": "string",
+     "semantic_type": "medical_specialty",
+     "description": "Medical specialty",
+     "nullable": false,
+     "is_primary_key": false,
+     "is_unique": false,
+     "allowed_values": [
+      "General Practice",
+      "Cardiology",
+      "Dermatology",
+      "Pediatrics",
+      "Neurology",
+      "Orthopedics"
+     ],
+     "generator": {
+      "strategy": "categorical",
+      "generator": null,
+      "params": {
+       "weights": {
+        "General Practice": 0.35,
+        "Cardiology": 0.15,
+        "Dermatology": 0.1,
+        "Pediatrics": 0.2,
+        "Neurology": 0.1,
+        "Orthopedics": 0.1
+       }
+      },
+      "depends_on": []
+     },
+     "pii": {
+      "classification": "none",
+      "privacy_action": "none",
+      "reason": "Public professional information"
+     },
+     "confidence": 1.0
+    }
+   ],
+   "primary_key": [
+    "doctor_id"
+   ],
+   "foreign_keys": []
+  },
+  {
+   "name": "appointments",
+   "description": "Appointments scheduled between patients and doctors",
+   "target_rows": 5000,
+   "columns": [
+    {
+     "name": "appointment_id",
+     "data_type": "uuid",
+     "semantic_type": "identifier",
+     "description": "Primary key for appointments",
+     "nullable": false,
+     "is_primary_key": true,
+     "is_unique": true,
+     "allowed_values": null,
+     "generator": {
+      "strategy": "deterministic_id",
+      "generator": "uuid4",
+      "params": {},
+      "depends_on": []
+     },
+     "pii": {
+      "classification": "none",
+      "privacy_action": "none",
+      "reason": "System identifier"
+     },
+     "confidence": 1.0
+    },
+    {
+     "name": "patient_id",
+     "data_type": "uuid",
+     "semantic_type": "identifier",
+     "description": "Foreign key referencing patients",
+     "nullable": false,
+     "is_primary_key": false,
+     "is_unique": false,
+     "allowed_values": null,
+     "generator": {
+      "strategy": "foreign_key",
+      "generator": null,
+      "params": {
+       "table": "patients",
+       "column": "patient_id"
+      },
+      "depends_on": []
+     },
+     "pii": {
+      "classification": "none",
+      "privacy_action": "none",
+      "reason": "Foreign key reference"
+     },
+     "confidence": 1.0
+    },
+    {
+     "name": "doctor_id",
+     "data_type": "uuid",
+     "semantic_type": "identifier",
+     "description": "Foreign key referencing doctors",
+     "nullable": false,
+     "is_primary_key": false,
+     "is_unique": false,
+     "allowed_values": null,
+     "generator": {
+      "strategy": "foreign_key",
+      "generator": null,
+      "params": {
+       "table": "doctors",
+       "column": "doctor_id"
+      },
+      "depends_on": []
+     },
+     "pii": {
+      "classification": "none",
+      "privacy_action": "none",
+      "reason": "Foreign key reference"
+     },
+     "confidence": 1.0
+    },
+    {
+     "name": "appointment_date",
+     "data_type": "datetime",
+     "semantic_type": "appointment_timestamp",
+     "description": "Date and time of the appointment",
+     "nullable": false,
+     "is_primary_key": false,
+     "is_unique": false,
+     "allowed_values": null,
+     "generator": {
+      "strategy": "faker",
+      "generator": "date_between",
+      "params": {
+       "start_date": "-1y",
+       "end_date": "+3m"
+      },
+      "depends_on": []
+     },
+     "pii": {
+      "classification": "none",
+      "privacy_action": "none",
+      "reason": "Operational timestamp"
+     },
+     "confidence": 1.0
+    },
+    {
+     "name": "status",
+     "data_type": "string",
+     "semantic_type": "appointment_status",
+     "description": "Status of the appointment",
+     "nullable": false,
+     "is_primary_key": false,
+     "is_unique": false,
+     "allowed_values": [
+      "Scheduled",
+      "Completed",
+      "Cancelled",
+      "No-Show"
+     ],
+     "generator": {
+      "strategy": "categorical",
+      "generator": null,
+      "params": {
+       "weights": {
+        "Scheduled": 0.2,
+        "Completed": 0.65,
+        "Cancelled": 0.1,
+        "No-Show": 0.05
+       }
+      },
+      "depends_on": []
+     },
+     "pii": {
+      "classification": "none",
+      "privacy_action": "none",
+      "reason": "Operational status"
+     },
+     "confidence": 1.0
+    }
+   ],
+   "primary_key": [
+    "appointment_id"
+   ],
+   "foreign_keys": [
+    {
+     "column": "patient_id",
+     "references_table": "patients",
+     "references_column": "patient_id"
+    },
+    {
+     "column": "doctor_id",
+     "references_table": "doctors",
+     "references_column": "doctor_id"
+    }
+   ]
+  }
+ ],
+ "relationships": [
+  {
+   "parent_table": "patients",
+   "parent_column": "patient_id",
+   "child_table": "appointments",
+   "child_column": "patient_id",
+   "cardinality": "1:N",
+   "confidence": 1.0
+  },
+  {
+   "parent_table": "doctors",
+   "parent_column": "doctor_id",
+   "child_table": "appointments",
+   "child_column": "doctor_id",
+   "cardinality": "1:N",
+   "confidence": 1.0
+  }
+ ],
+ "business_rules": [
+  {
+   "id": "br_appointment_patient_exists",
+   "description": "Appointments must reference a valid patient_id in the patients table.",
+   "tables": [
+    "appointments",
+    "patients"
+   ],
+   "expression": null,
+   "severity": "error"
+  },
+  {
+   "id": "br_appointment_doctor_exists",
+   "description": "Appointments must reference a valid doctor_id in the doctors table.",
+   "tables": [
+    "appointments",
+    "doctors"
+   ],
+   "expression": null,
+   "severity": "error"
+  }
+ ],
+ "edge_cases": {
+  "mode": "ai_recommended",
+  "null_rate": null,
+  "outlier_rate": null,
+  "rare_category_rate": null,
+  "recommendations": [
+   {
+    "name": "patient_missing_phone",
+    "kind": "null_injection",
+    "description": "Some patients do not have a contact phone number.",
+    "table": "patients",
+    "column": "phone_number",
+    "rate": 0.05,
+    "rationale": "Real-world patient data often contains missing optional contact details."
+   },
+   {
+    "name": "cancelled_appointments",
+    "kind": "status_scenario",
+    "description": "A small fraction of appointments are cancelled or result in a no-show.",
+    "table": "appointments",
+    "column": "status",
+    "rate": 0.15,
+    "rationale": "Reflects standard medical scheduling fallout."
+   }
+  ]
+ },
+ "privacy": {
+  "mode": "auto"
+ },
+ "confidence": 1.0,
+ "warnings": [],
+ "assumptions": [
+  "Target rows determined using a standard ratio of 1000 patients, 100 doctors, and 5000 appointments."
+ ]
+}
