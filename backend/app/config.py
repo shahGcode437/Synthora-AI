@@ -19,7 +19,8 @@ class Settings(BaseSettings):
     gemini_api_key: str = ""
     openai_api_key: str = ""
     xai_api_key: str = ""
-    dashscope_api_key: str = ""
+    qwen_api_key: str = ""
+    qwen_base_url: str = ""
 
     gemini_model: str = ""
     openai_model: str = ""

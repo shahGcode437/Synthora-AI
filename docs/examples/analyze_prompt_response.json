@@ -1,0 +1,243 @@
+{
+  "plan": {
+    "plan_version": "1.0",
+    "source_mode": "prompt",
+    "domain": "ecommerce",
+    "summary": "Generation plan for 20 Pakistani e-commerce customer records including names, emails, cities, signup dates, and account statuses.",
+    "locale": "en_PK",
+    "seed": null,
+    "tables": [
+      {
+        "name": "customers",
+        "description": "Table storing e-commerce customer profiles in Pakistan.",
+        "target_rows": 20,
+        "columns": [
+          {
+            "name": "customer_id",
+            "data_type": "uuid",
+            "semantic_type": "identifier",
+            "description": "Primary key for the customer record.",
+            "nullable": false,
+            "is_primary_key": true,
+            "is_unique": true,
+            "allowed_values": null,
+            "generator": {
+              "strategy": "deterministic_id",
+              "generator": "uuid4",
+              "params": {},
+              "depends_on": []
+            },
+            "pii": {
+              "classification": "none",
+              "privacy_action": "none",
+              "reason": "System identifier"
+            },
+            "confidence": 1.0
+          },
+          {
+            "name": "name",
+            "data_type": "string",
+            "semantic_type": "person_name",
+            "description": "Full name of the customer.",
+            "nullable": false,
+            "is_primary_key": false,
+            "is_unique": false,
+            "allowed_values": null,
+            "generator": {
+              "strategy": "faker",
+              "generator": "name",
+              "params": {},
+              "depends_on": []
+            },
+            "pii": {
+              "classification": "direct_identifier",
+              "privacy_action": "synthesize",
+              "reason": "Customer personal name"
+            },
+            "confidence": 1.0
+          },
+          {
+            "name": "email",
+            "data_type": "string",
+            "semantic_type": "email",
+            "description": "Email address of the customer.",
+            "nullable": false,
+            "is_primary_key": false,
+            "is_unique": true,
+            "allowed_values": null,
+            "generator": {
+              "strategy": "derived",
+              "generator": null,
+              "params": {},
+              "depends_on": [
+                "name"
+              ]
+            },
+            "pii": {
+              "classification": "direct_identifier",
+              "privacy_action": "synthesize",
+              "reason": "Customer email address"
+            },
+            "confidence": 1.0
+          },
+          {
+            "name": "city",
+            "data_type": "string",
+            "semantic_type": "city",
+            "description": "Major city in Pakistan where the customer resides.",
+            "nullable": false,
+            "is_primary_key": false,
+            "is_unique": false,
+            "allowed_values": [
+              "Karachi",
+              "Lahore",
+              "Islamabad",
+              "Rawalpindi",
+              "Faisalabad",
+              "Multan",
+              "Peshawar",
+              "Quetta"
+            ],
+            "generator": {
+              "strategy": "categorical",
+              "generator": null,
+              "params": {
+                "weights": {
+                  "Karachi": 0.3,
+                  "Lahore": 0.3,
+                  "Islamabad": 0.15,
+                  "Rawalpindi": 0.1,
+                  "Faisalabad": 0.05,
+                  "Multan": 0.05,
+                  "Peshawar": 0.025,
+                  "Quetta": 0.025
+                }
+              },
+              "depends_on": []
+            },
+            "pii": {
+              "classification": "quasi_identifier",
+              "privacy_action": "synthesize",
+              "reason": "Customer location"
+            },
+            "confidence": 1.0
+          },
+          {
+            "name": "signup_date",
+            "data_type": "date",
+            "semantic_type": "signup_date",
+            "description": "Date when the customer registered an account.",
+            "nullable": false,
+            "is_primary_key": false,
+            "is_unique": false,
+            "allowed_values": null,
+            "generator": {
+              "strategy": "faker",
+              "generator": "date_between",
+              "params": {
+                "start_date": "-2y",
+                "end_date": "today"
+              },
+              "depends_on": []
+            },
+            "pii": {
+              "classification": "none",
+              "privacy_action": "none",
+              "reason": "Operational date"
+            },
+            "confidence": 1.0
+          },
+          {
+            "name": "account_status",
+            "data_type": "string",
+            "semantic_type": "account_status",
+            "description": "Current status of the customer account.",
+            "nullable": false,
+            "is_primary_key": false,
+            "is_unique": false,
+            "allowed_values": [
+              "active",
+              "inactive",
+              "suspended"
+            ],
+            "generator": {
+              "strategy": "categorical",
+              "generator": null,
+              "params": {
+                "weights": {
+                  "active": 0.8,
+                  "inactive": 0.15,
+                  "suspended": 0.05
+                }
+              },
+              "depends_on": []
+            },
+            "pii": {
+              "classification": "none",
+              "privacy_action": "none",
+              "reason": "Business status attribute"
+            },
+            "confidence": 1.0
+          }
+        ],
+        "primary_key": [
+          "customer_id"
+        ],
+        "foreign_keys": []
+      }
+    ],
+    "relationships": [],
+    "business_rules": [
+      {
+        "id": "br_signup_date_not_future",
+        "description": "Customer signup date must not be in the future.",
+        "tables": [
+          "customers"
+        ],
+        "expression": "signup_date <= today()",
+        "severity": "error"
+      },
+      {
+        "id": "br_email_unique",
+        "description": "Each customer must have a unique email address.",
+        "tables": [
+          "customers"
+        ],
+        "expression": "unique(email)",
+        "severity": "error"
+      }
+    ],
+    "edge_cases": {
+      "mode": "ai_recommended",
+      "null_rate": 0.0,
+      "outlier_rate": 0.05,
+      "rare_category_rate": 0.05,
+      "recommendations": [
+        {
+          "name": "suspended_account",
+          "kind": "rare_category",
+          "description": "Include a small number of suspended accounts.",
+          "table": "customers",
+          "column": "account_status",
+          "rate": 0.05,
+          "rationale": "Represents realistic edge cases for user account management."
+        }
+      ]
+    },
+    "privacy": {
+      "mode": "auto"
+    },
+    "confidence": 1.0,
+    "warnings": [],
+    "assumptions": [
+      "Target row count is fixed at exactly 20 records per user prompt.",
+      "Locale en_PK implies Pakistani cities and localized names via faker where available."
+    ]
+  },
+  "ai": {
+    "provider": "gemini",
+    "model": "gemini-3.5-flash-lite",
+    "latency_ms": 5523,
+    "fallbacks": 0
+  }
+}

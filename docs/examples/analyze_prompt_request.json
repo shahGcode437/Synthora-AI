@@ -1,0 +1,8 @@
+{
+  "mode": "prompt",
+  "prompt": "Generate 20 Pakistani e-commerce customer records with name, email, city, signup date and account status.",
+  "target_rows": 20,
+  "locale": "en_PK",
+  "edge_case_mode": "ai_recommended",
+  "privacy_mode": "auto"
+}

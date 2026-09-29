@@ -9,6 +9,7 @@ from fastapi.responses import JSONResponse
 from app.ai.errors import AllProvidersFailedError, ProviderNotConfiguredError
 from app.exports.exporter import ExportError
 from app.generation.context import GenerationError
+from app.profiling.csv_parser import SampleInputError
 from app.services.analyze import ModeNotSupportedError
 
 logger = logging.getLogger(__name__)
@@ -25,7 +26,7 @@ def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(RequestValidationError)
     async def _validation(_: Request, exc: RequestValidationError):
         details = [
-            {"field": ".".join(str(p) for p in e["loc"] if p != "body"), "message": e["msg"]}
+            {"field": ".".join(str(p) for p in e["loc"] if p != "body") or "body", "message": e["msg"]}
             for e in exc.errors()
         ]
         return _resp(422, "validation_error", "Request validation failed.", details)
@@ -45,6 +46,11 @@ def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(ExportError)
     async def _export(_: Request, exc: ExportError):
         return _resp(422, "export_error", str(exc))
+
+    @app.exception_handler(SampleInputError)
+    async def _sample_input(_: Request, exc: SampleInputError):
+        code = "file_too_large" if exc.status == 413 else "invalid_sample"
+        return _resp(exc.status, code, str(exc))
 
     @app.exception_handler(GenerationError)
     async def _generation(_: Request, exc: GenerationError):

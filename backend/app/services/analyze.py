@@ -32,6 +32,6 @@ def apply_user_controls(plan: GenerationPlan, req: AnalyzeRequest) -> Generation
 
 async def analyze(req: AnalyzeRequest, router: LLMRouter) -> AnalyzeResponse:
     if req.mode != "prompt":
-        raise ModeNotSupportedError("Sample-data mode is not implemented yet; only 'prompt' is supported.")
+        raise ModeNotSupportedError("Sample-data mode needs a file upload: use POST /api/v1/analyze/sample.")
     plan, meta = await router.complete_structured(build_schema_analysis_request(req), GenerationPlan)
     return AnalyzeResponse(plan=apply_user_controls(plan, req), ai=meta)

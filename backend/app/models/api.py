@@ -6,6 +6,7 @@ from typing import Literal
 from pydantic import BaseModel, Field, model_validator
 
 from app.models.plan import GenerationPlan
+from app.models.profile import DatasetProfile
 
 MAX_TARGET_ROWS = 1_000_000
 
@@ -38,6 +39,14 @@ class AIRunMeta(BaseModel):
 class AnalyzeResponse(BaseModel):
     plan: GenerationPlan
     ai: AIRunMeta
+
+
+class SampleAnalyzeResponse(BaseModel):
+    plan: GenerationPlan
+    ai: AIRunMeta
+    profile: DatasetProfile
+    sample_rows: list[dict] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
 
 
 class ErrorBody(BaseModel):

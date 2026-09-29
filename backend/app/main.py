@@ -5,6 +5,7 @@ from app.api.errors import register_exception_handlers
 from app.api.v1.analyze import router as analyze_router
 from app.api.v1.export import router as export_router
 from app.api.v1.generate import router as generate_router
+from app.api.v1.sample import router as sample_router
 from app.config import get_settings
 
 settings = get_settings()
@@ -25,6 +26,7 @@ app.add_middleware(
 
 register_exception_handlers(app)
 app.include_router(analyze_router)
+app.include_router(sample_router)
 app.include_router(generate_router)
 app.include_router(export_router)
 

@@ -1,0 +1,687 @@
+{
+  "plan": {
+    "plan_version": "1.0",
+    "source_mode": "sample",
+    "domain": "ecommerce",
+    "summary": "Generation plan for Pakistani customer records based on sample profile, preserving city and status distributions, with added suspended accounts.",
+    "locale": "en_PK",
+    "seed": null,
+    "tables": [
+      {
+        "name": "customers",
+        "description": "Customer demographic and account details in Pakistan.",
+        "target_rows": 100,
+        "columns": [
+          {
+            "name": "name",
+            "data_type": "string",
+            "semantic_type": "customer_name",
+            "description": "Full name of the customer.",
+            "nullable": false,
+            "is_primary_key": false,
+            "is_unique": false,
+            "allowed_values": null,
+            "generator": {
+              "strategy": "faker",
+              "generator": "name",
+              "params": {},
+              "depends_on": []
+            },
+            "pii": {
+              "classification": "direct_identifier",
+              "privacy_action": "synthesize",
+              "reason": "Customer full name is a direct PII identifier."
+            },
+            "confidence": 1.0
+          },
+          {
+            "name": "email",
+            "data_type": "string",
+            "semantic_type": "customer_email",
+            "description": "Email address of the customer.",
+            "nullable": true,
+            "is_primary_key": false,
+            "is_unique": true,
+            "allowed_values": null,
+            "generator": {
+              "strategy": "derived",
+              "generator": null,
+              "params": {
+                "null_rate": 0.075
+              },
+              "depends_on": [
+                "name"
+              ]
+            },
+            "pii": {
+              "classification": "direct_identifier",
+              "privacy_action": "synthesize",
+              "reason": "Email address is a direct PII identifier."
+            },
+            "confidence": 1.0
+          },
+          {
+            "name": "city",
+            "data_type": "string",
+            "semantic_type": "customer_city",
+            "description": "City of residence in Pakistan.",
+            "nullable": true,
+            "is_primary_key": false,
+            "is_unique": false,
+            "allowed_values": [
+              "Karachi",
+              "Lahore",
+              "Islamabad",
+              "Rawalpindi",
+              "Faisalabad",
+              "Multan",
+              "Peshawar"
+            ],
+            "generator": {
+              "strategy": "categorical",
+              "generator": null,
+              "params": {
+                "weights": {
+                  "Karachi": 0.3077,
+                  "Lahore": 0.2564,
+                  "Islamabad": 0.1282,
+                  "Rawalpindi": 0.1026,
+                  "Faisalabad": 0.0769,
+                  "Multan": 0.0769,
+                  "Peshawar": 0.0513
+                },
+                "null_rate": 0.025
+              },
+              "depends_on": []
+            },
+            "pii": {
+              "classification": "quasi_identifier",
+              "privacy_action": "synthesize",
+              "reason": "City is a quasi-identifier."
+            },
+            "confidence": 1.0
+          },
+          {
+            "name": "age",
+            "data_type": "integer",
+            "semantic_type": "customer_age",
+            "description": "Age of the customer in years.",
+            "nullable": true,
+            "is_primary_key": false,
+            "is_unique": false,
+            "allowed_values": null,
+            "generator": {
+              "strategy": "statistical",
+              "generator": "normal",
+              "params": {
+                "mean": 33.63157894736842,
+                "std": 7.680867957117863,
+                "min": 19.0,
+                "max": 48.0,
+                "null_rate": 0.05
+              },
+              "depends_on": []
+            },
+            "pii": {
+              "classification": "quasi_identifier",
+              "privacy_action": "synthesize",
+              "reason": "Age is a quasi-identifier."
+            },
+            "confidence": 1.0
+          },
+          {
+            "name": "signup_date",
+            "data_type": "date",
+            "semantic_type": "signup_date",
+            "description": "Date when the customer signed up.",
+            "nullable": false,
+            "is_primary_key": false,
+            "is_unique": false,
+            "allowed_values": null,
+            "generator": {
+              "strategy": "faker",
+              "generator": "date_between",
+              "params": {
+                "start_date": "2024-01-12",
+                "end_date": "2025-05-26"
+              },
+              "depends_on": []
+            },
+            "pii": {
+              "classification": "none",
+              "privacy_action": "none",
+              "reason": "Signup date is non-PII operational data."
+            },
+            "confidence": 1.0
+          },
+          {
+            "name": "account_status",
+            "data_type": "string",
+            "semantic_type": "account_status",
+            "description": "Current status of the customer account.",
+            "nullable": false,
+            "is_primary_key": false,
+            "is_unique": false,
+            "allowed_values": [
+              "active",
+              "inactive",
+              "suspended"
+            ],
+            "generator": {
+              "strategy": "categorical",
+              "generator": null,
+              "params": {
+                "weights": {
+                  "active": 0.8,
+                  "inactive": 0.2,
+                  "suspended": 0.0
+                }
+              },
+              "depends_on": []
+            },
+            "pii": {
+              "classification": "none",
+              "privacy_action": "none",
+              "reason": "Account status is non-PII business data."
+            },
+            "confidence": 1.0
+          }
+        ],
+        "primary_key": [],
+        "foreign_keys": []
+      }
+    ],
+    "relationships": [],
+    "business_rules": [
+      {
+        "id": "br_age_range",
+        "description": "Customer age must be between 18 and 100 years.",
+        "tables": [
+          "customers"
+        ],
+        "expression": "age >= 18 and age <= 100",
+        "severity": "error"
+      },
+      {
+        "id": "br_valid_status",
+        "description": "Account status must be one of active, inactive, or suspended.",
+        "tables": [
+          "customers"
+        ],
+        "expression": "account_status in ['active', 'inactive', 'suspended']",
+        "severity": "error"
+      }
+    ],
+    "edge_cases": {
+      "mode": "ai_recommended",
+      "null_rate": null,
+      "outlier_rate": 0.02,
+      "rare_category_rate": 0.03,
+      "recommendations": [
+        {
+          "name": "suspended_accounts",
+          "kind": "status_scenario",
+          "description": "Include a small subset of accounts with suspended status as requested.",
+          "table": "customers",
+          "column": "account_status",
+          "rate": 0.05,
+          "rationale": "Fulfills user requirement for suspended accounts."
+        },
+        {
+          "name": "null_city",
+          "kind": "null_injection",
+          "description": "Inject missing city values based on profile null percentage.",
+          "table": "customers",
+          "column": "city",
+          "rate": 0.025,
+          "rationale": "Mirrors observed missingness in profile data."
+        }
+      ]
+    },
+    "privacy": {
+      "mode": "auto"
+    },
+    "confidence": 1.0,
+    "warnings": [
+      "No unique identifier column found; the table has no primary key."
+    ],
+    "assumptions": [
+      "Target row count set to 100 as specified in controls.",
+      "Added 'suspended' to account_status allowed values to satisfy instruction.",
+      "'account_status': added value 'suspended' (requested) with 0 baseline weight for edge cases.",
+      "Category frequencies preserved from the source for: ['city', 'account_status'].",
+      "Numeric ranges/statistics, date ranges and null rates were taken from the source profile; row count defaults to the source (40) unless overridden."
+    ]
+  },
+  "ai": {
+    "provider": "gemini",
+    "model": "gemini-3.5-flash-lite",
+    "latency_ms": 5887,
+    "fallbacks": 0
+  },
+  "profile": {
+    "table_name": "customers",
+    "total_rows": 40,
+    "total_columns": 6,
+    "delimiter": ",",
+    "columns": [
+      {
+        "name": "name",
+        "dtype": "string",
+        "row_count": 40,
+        "null_count": 0,
+        "null_pct": 0.0,
+        "unique_count": 33,
+        "unique_ratio": 0.825,
+        "sample_values": [
+          "Aaaaa Aaaa",
+          "Aaaaaa Aaaaaaaa",
+          "Aaaa Aaaaa",
+          "Aaaaaa Aaaaa",
+          "Aaaaaa Aaaaa"
+        ],
+        "min": null,
+        "max": null,
+        "mean": null,
+        "median": null,
+        "std": null,
+        "quantiles": null,
+        "log_mean": null,
+        "log_std": null,
+        "top_values": [],
+        "date_min": null,
+        "date_max": null,
+        "date_format": null,
+        "str_len": {
+          "min": 9.0,
+          "max": 15.0,
+          "mean": 11.3
+        },
+        "is_categorical": false,
+        "is_numeric": false,
+        "is_date": false,
+        "is_identifier": false,
+        "id_like_name": false,
+        "candidate_primary_key": false,
+        "id_pattern": null,
+        "id_repeat": null,
+        "pattern_hints": [],
+        "pii_hint": "column name suggests name"
+      },
+      {
+        "name": "email",
+        "dtype": "string",
+        "row_count": 40,
+        "null_count": 3,
+        "null_pct": 7.5,
+        "unique_count": 37,
+        "unique_ratio": 1.0,
+        "sample_values": [
+          "aaaaa.aaaa9@aaaaaaa.aaa",
+          "aaaaaa.aaaaaaaa9@aaaaaaa.aaa",
+          "aaaa.aaaaa9@aaaaaaa.aaa",
+          "aaaaaa.aaaaa9@aaaaaaa.aaa",
+          "aaaa.aaaa9@aaaaaaa.aaa"
+        ],
+        "min": null,
+        "max": null,
+        "mean": null,
+        "median": null,
+        "std": null,
+        "quantiles": null,
+        "log_mean": null,
+        "log_std": null,
+        "top_values": [],
+        "date_min": null,
+        "date_max": null,
+        "date_format": null,
+        "str_len": {
+          "min": 22.0,
+          "max": 29.0,
+          "mean": 25.0
+        },
+        "is_categorical": false,
+        "is_numeric": false,
+        "is_date": false,
+        "is_identifier": false,
+        "id_like_name": false,
+        "candidate_primary_key": false,
+        "id_pattern": null,
+        "id_repeat": null,
+        "pattern_hints": [
+          "email"
+        ],
+        "pii_hint": "column name suggests email"
+      },
+      {
+        "name": "city",
+        "dtype": "string",
+        "row_count": 40,
+        "null_count": 1,
+        "null_pct": 2.5,
+        "unique_count": 7,
+        "unique_ratio": 0.1795,
+        "sample_values": [
+          "Lahore",
+          "Karachi",
+          "Islamabad",
+          "Faisalabad",
+          "Multan"
+        ],
+        "min": null,
+        "max": null,
+        "mean": null,
+        "median": null,
+        "std": null,
+        "quantiles": null,
+        "log_mean": null,
+        "log_std": null,
+        "top_values": [
+          {
+            "value": "Karachi",
+            "count": 12,
+            "pct": 30.77
+          },
+          {
+            "value": "Lahore",
+            "count": 10,
+            "pct": 25.64
+          },
+          {
+            "value": "Islamabad",
+            "count": 5,
+            "pct": 12.82
+          },
+          {
+            "value": "Rawalpindi",
+            "count": 4,
+            "pct": 10.26
+          },
+          {
+            "value": "Faisalabad",
+            "count": 3,
+            "pct": 7.69
+          },
+          {
+            "value": "Multan",
+            "count": 3,
+            "pct": 7.69
+          },
+          {
+            "value": "Peshawar",
+            "count": 2,
+            "pct": 5.13
+          }
+        ],
+        "date_min": null,
+        "date_max": null,
+        "date_format": null,
+        "str_len": {
+          "min": 6.0,
+          "max": 10.0,
+          "mean": 7.5
+        },
+        "is_categorical": true,
+        "is_numeric": false,
+        "is_date": false,
+        "is_identifier": false,
+        "id_like_name": false,
+        "candidate_primary_key": false,
+        "id_pattern": null,
+        "id_repeat": null,
+        "pattern_hints": [],
+        "pii_hint": null
+      },
+      {
+        "name": "age",
+        "dtype": "integer",
+        "row_count": 40,
+        "null_count": 2,
+        "null_pct": 5.0,
+        "unique_count": 22,
+        "unique_ratio": 0.5789,
+        "sample_values": [
+          "35",
+          "26",
+          "43",
+          "44",
+          "38"
+        ],
+        "min": 19.0,
+        "max": 48.0,
+        "mean": 33.63157894736842,
+        "median": 33.0,
+        "std": 7.680867957117863,
+        "quantiles": {
+          "p5": 22.85,
+          "p25": 27.25,
+          "p50": 33.0,
+          "p75": 40.0,
+          "p95": 46.0
+        },
+        "log_mean": 3.489624753256883,
+        "log_std": 0.2320658739874057,
+        "top_values": [],
+        "date_min": null,
+        "date_max": null,
+        "date_format": null,
+        "str_len": null,
+        "is_categorical": false,
+        "is_numeric": true,
+        "is_date": false,
+        "is_identifier": false,
+        "id_like_name": false,
+        "candidate_primary_key": false,
+        "id_pattern": null,
+        "id_repeat": null,
+        "pattern_hints": [],
+        "pii_hint": null
+      },
+      {
+        "name": "signup_date",
+        "dtype": "date",
+        "row_count": 40,
+        "null_count": 0,
+        "null_pct": 0.0,
+        "unique_count": 37,
+        "unique_ratio": 0.925,
+        "sample_values": [
+          "2024-03-30",
+          "2024-01-16",
+          "2024-01-12",
+          "2025-05-13",
+          "2024-05-14"
+        ],
+        "min": null,
+        "max": null,
+        "mean": null,
+        "median": null,
+        "std": null,
+        "quantiles": null,
+        "log_mean": null,
+        "log_std": null,
+        "top_values": [],
+        "date_min": "2024-01-12",
+        "date_max": "2025-05-26",
+        "date_format": "%Y-%m-%d",
+        "str_len": null,
+        "is_categorical": false,
+        "is_numeric": false,
+        "is_date": true,
+        "is_identifier": false,
+        "id_like_name": false,
+        "candidate_primary_key": false,
+        "id_pattern": null,
+        "id_repeat": null,
+        "pattern_hints": [],
+        "pii_hint": null
+      },
+      {
+        "name": "account_status",
+        "dtype": "string",
+        "row_count": 40,
+        "null_count": 0,
+        "null_pct": 0.0,
+        "unique_count": 2,
+        "unique_ratio": 0.05,
+        "sample_values": [
+          "active",
+          "inactive"
+        ],
+        "min": null,
+        "max": null,
+        "mean": null,
+        "median": null,
+        "std": null,
+        "quantiles": null,
+        "log_mean": null,
+        "log_std": null,
+        "top_values": [
+          {
+            "value": "active",
+            "count": 32,
+            "pct": 80.0
+          },
+          {
+            "value": "inactive",
+            "count": 8,
+            "pct": 20.0
+          }
+        ],
+        "date_min": null,
+        "date_max": null,
+        "date_format": null,
+        "str_len": {
+          "min": 6.0,
+          "max": 8.0,
+          "mean": 6.4
+        },
+        "is_categorical": true,
+        "is_numeric": false,
+        "is_date": false,
+        "is_identifier": false,
+        "id_like_name": false,
+        "candidate_primary_key": false,
+        "id_pattern": null,
+        "id_repeat": null,
+        "pattern_hints": [],
+        "pii_hint": null
+      }
+    ],
+    "likely_identifiers": [],
+    "likely_categorical": [
+      "city",
+      "account_status"
+    ],
+    "likely_numeric": [
+      "age"
+    ],
+    "likely_date": [
+      "signup_date"
+    ],
+    "likely_pii": [
+      "name",
+      "email"
+    ],
+    "warnings": []
+  },
+  "sample_rows": [
+    {
+      "name": "Aaaaa Aaaa",
+      "email": "aaaaa.aaaa9@aaaaaaa.aaa",
+      "city": "Lahore",
+      "age": "35",
+      "signup_date": "2024-03-30",
+      "account_status": "active"
+    },
+    {
+      "name": "Aaaaaa Aaaaaaaa",
+      "email": "aaaaaa.aaaaaaaa9@aaaaaaa.aaa",
+      "city": "Karachi",
+      "age": "26",
+      "signup_date": "2024-01-16",
+      "account_status": "active"
+    },
+    {
+      "name": "Aaaaaa Aaaaaa",
+      "email": "aaaaaa.aaaaaa9@aaaaaaa.aaa",
+      "city": null,
+      "age": "33",
+      "signup_date": "2024-08-06",
+      "account_status": "active"
+    },
+    {
+      "name": "Aaaaa Aaaaaaa",
+      "email": "aaaaa.aaaaaaa99@aaaaaaa.aaa",
+      "city": "Faisalabad",
+      "age": "46",
+      "signup_date": "2024-10-30",
+      "account_status": "active"
+    },
+    {
+      "name": "Aaaaa Aaaa",
+      "email": "aaaaa.aaaa99@aaaaaaa.aaa",
+      "city": "Multan",
+      "age": "28",
+      "signup_date": "2025-01-12",
+      "account_status": "active"
+    },
+    {
+      "name": "Aaaaa Aaaa",
+      "email": "aaaaa.aaaa99@aaaaaaa.aaa",
+      "city": "Islamabad",
+      "age": "36",
+      "signup_date": "2024-07-13",
+      "account_status": "active"
+    },
+    {
+      "name": "Aaaaaa Aaaaa",
+      "email": "aaaaaa.aaaaa99@aaaaaaa.aaa",
+      "city": "Karachi",
+      "age": null,
+      "signup_date": "2024-03-11",
+      "account_status": "active"
+    },
+    {
+      "name": "Aaaa Aaaa",
+      "email": "aaaa.aaaa99@aaaaaaa.aaa",
+      "city": "Karachi",
+      "age": "28",
+      "signup_date": "2024-07-27",
+      "account_status": "active"
+    },
+    {
+      "name": "Aaaaaa Aaaaaaaa",
+      "email": "aaaaaa.aaaaaaaa99@aaaaaaa.aaa",
+      "city": "Karachi",
+      "age": "35",
+      "signup_date": "2024-05-14",
+      "account_status": "active"
+    },
+    {
+      "name": "Aaaaa Aaaaa",
+      "email": "aaaaa.aaaaa99@aaaaaaa.aaa",
+      "city": "Lahore",
+      "age": "19",
+      "signup_date": "2024-05-12",
+      "account_status": "active"
+    },
+    {
+      "name": "Aaaaa Aaaaa",
+      "email": "aaaaa.aaaaa99@aaaaaaa.aaa",
+      "city": "Multan",
+      "age": "48",
+      "signup_date": "2025-03-03",
+      "account_status": "active"
+    },
+    {
+      "name": "Aaaaa Aaaaa",
+      "email": "aaaaa.aaaaa99@aaaaaaa.aaa",
+      "city": "Rawalpindi",
+      "age": "27",
+      "signup_date": "2024-03-23",
+      "account_status": "inactive"
+    }
+  ],
+  "warnings": []
+}

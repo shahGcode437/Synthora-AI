@@ -6,3 +6,5 @@ python-dotenv>=1.0,<2
 google-genai>=1.0,<3
 faker>=30
 numpy>=1.26
+python-multipart>=0.0.9
+openai>=1.40

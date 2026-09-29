@@ -1,0 +1,168 @@
+{
+  "data": {
+    "customers": [
+      {
+        "customer_id": "bdd640fb-0667-4ad1-9c80-317fa3b1799d",
+        "name": "Fatima Siddiqui",
+        "email": "fatima_siddiqui@outlook.com",
+        "city": "Rawalpindi",
+        "signup_date": "2024-12-24",
+        "account_status": "active"
+      },
+      {
+        "customer_id": "23b8c1e9-3924-46de-beb1-3b9046685257",
+        "name": "Zainab Siddiqui",
+        "email": "zainab_siddiqui@outlook.com",
+        "city": "Lahore",
+        "signup_date": "2024-10-18",
+        "account_status": "suspended"
+      },
+      {
+        "customer_id": "bd9c66b3-ad3c-4d6d-9a3d-1fa7bc8960a9",
+        "name": "Sidra Chaudhry",
+        "email": "schaudhry@gmail.com",
+        "city": "Karachi",
+        "signup_date": "2026-04-27",
+        "account_status": "inactive"
+      },
+      {
+        "customer_id": "972a8469-1641-4f82-8b9d-2434e465e150",
+        "name": "Talha Butt",
+        "email": "talhabutt@yahoo.com",
+        "city": "Lahore",
+        "signup_date": "2025-04-30",
+        "account_status": "inactive"
+      },
+      {
+        "customer_id": "17fc695a-07a0-4a6e-8822-e8f36c031199",
+        "name": "Hamza Chaudhry",
+        "email": "hamza.chaudhry@hotmail.com",
+        "city": "Quetta",
+        "signup_date": "2025-04-07",
+        "account_status": "active"
+      },
+      {
+        "customer_id": "9a1de644-815e-46d1-bb8f-aa1837f8a88b",
+        "name": "Zainab Nawaz",
+        "email": "zainab.nawaz@yahoo.com",
+        "city": "Lahore",
+        "signup_date": "2025-03-21",
+        "account_status": "active"
+      },
+      {
+        "customer_id": "b74d0fb1-32e7-4629-8fad-c1a606cb0fb3",
+        "name": "Laiba Siddiqui",
+        "email": "laibasiddiqui@gmail.com",
+        "city": "Peshawar",
+        "signup_date": "2025-01-15",
+        "account_status": "active"
+      },
+      {
+        "customer_id": "6b65a6a4-8b81-48f6-b38a-088ca65ed389",
+        "name": "Saad Chaudhry",
+        "email": "saad.chaudhry@gmail.com",
+        "city": "Faisalabad",
+        "signup_date": "2026-04-24",
+        "account_status": "active"
+      },
+      {
+        "customer_id": "47378190-96da-4dac-b2ff-5d2a386ecbe0",
+        "name": "Laiba Siddiqui",
+        "email": "laibasiddiqui2@gmail.com",
+        "city": "Karachi",
+        "signup_date": "2024-12-17",
+        "account_status": "active"
+      },
+      {
+        "customer_id": "c241330b-01a9-471f-9e8a-774bcf36d58b",
+        "name": "Fatima Siddiqui",
+        "email": "fatima.siddiqui@hotmail.com",
+        "city": "Islamabad",
+        "signup_date": "2026-03-08",
+        "account_status": "active"
+      },
+      {
+        "customer_id": "6c307511-b2b9-437a-a8df-6ec4ce4a2bbd",
+        "name": "Mahnoor Mirza",
+        "email": "mahnoor.mirza@yahoo.com",
+        "city": "Islamabad",
+        "signup_date": "2026-04-27",
+        "account_status": "active"
+      },
+      {
+        "customer_id": "371ecd7b-27cd-4130-8722-9389571aa876",
+        "name": "Hamza Shah",
+        "email": "hamza_shah@outlook.com",
+        "city": "Lahore",
+        "signup_date": "2026-08-22",
+        "account_status": "active"
+      },
+      {
+        "customer_id": "1a2a73ed-562b-4f79-8374-59eef50bea63",
+        "name": "Mahnoor Qureshi",
+        "email": "mahnoorqureshi@yahoo.com",
+        "city": "Karachi",
+        "signup_date": "2025-11-26",
+        "account_status": "active"
+      },
+      {
+        "customer_id": "5be6128e-18c2-4797-a142-ea7d17be3111",
+        "name": "Sidra Farooqi",
+        "email": "sfarooqi@yahoo.com",
+        "city": "Islamabad",
+        "signup_date": "2024-12-05",
+        "account_status": "active"
+      },
+      {
+        "customer_id": "43b7a3a6-9a8d-4a03-980d-7b71d8f56413",
+        "name": "Usman Siddiqui",
+        "email": "usiddiqui@outlook.com",
+        "city": "Karachi",
+        "signup_date": "2025-12-31",
+        "account_status": "active"
+      },
+      {
+        "customer_id": "759cde66-bacf-43d0-8b1f-9163ce9ff57f",
+        "name": "Laiba Chaudhry",
+        "email": "laibachaudhry@gmail.com",
+        "city": "Lahore",
+        "signup_date": "2025-08-22",
+        "account_status": "inactive"
+      },
+      {
+        "customer_id": "ec1b8ca1-f91e-4d4c-9ff4-9b7889463e85",
+        "name": "Bushra Shah",
+        "email": "bushra.shah@outlook.com",
+        "city": "Lahore",
+        "signup_date": "2024-10-23",
+        "account_status": "inactive"
+      },
+      {
+        "customer_id": "4b0dbb41-8d52-48f1-942c-3fe860e7a113",
+        "name": "Imran Sheikh",
+        "email": "imran_sheikh@outlook.com",
+        "city": "Peshawar",
+        "signup_date": "2024-10-22",
+        "account_status": "inactive"
+      },
+      {
+        "customer_id": "e2acf72f-9e57-4f7a-a0ee-89aed453dd32",
+        "name": "Zainab Ahmed",
+        "email": "zahmed@outlook.com",
+        "city": "Faisalabad",
+        "signup_date": "2024-12-10",
+        "account_status": "active"
+      },
+      {
+        "customer_id": "3139d32c-93cd-49bf-9c94-1cf0dc98d2c1",
+        "name": "Hina Butt",
+        "email": "hina.butt@gmail.com",
+        "city": "Karachi",
+        "signup_date": "2025-03-17",
+        "account_status": "active"
+      }
+    ]
+  },
+  "format": "csv",
+  "filename": "synthora_customers"
+}

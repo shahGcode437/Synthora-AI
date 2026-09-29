@@ -27,6 +27,10 @@ _SEMANTIC_PROVIDERS: list[tuple[str, str]] = [
 ]
 
 
+# Plan-level params consumed by the engine itself, never passed to Faker.
+RESERVED_PARAMS = {"null_rate", "synthetic_pool", "weights"}
+
+
 def semantic_provider(col: ColumnPlan) -> str | None:
     keys = [col.semantic_type.lower(), col.name.lower()]
     for key in keys:
@@ -58,8 +62,9 @@ def _ids(ctx: GenContext, table: TablePlan, col: ColumnPlan, n: int) -> list[Any
         start = int(_num(p.get("start")) or 1)
         return list(range(start, start + n))
     prefix = str(p.get("prefix", f"{col.name.upper()[:4]}-"))
-    width = max(len(str(n)), int(_num(p.get("width")) or 6))
-    return [f"{prefix}{i:0{width}d}" for i in range(1, n + 1)]
+    start = int(_num(p.get("start")) or 1)
+    width = max(len(str(start + n - 1)), int(_num(p.get("width")) or 6))
+    return [f"{prefix}{i:0{width}d}" for i in range(start, start + n)]
 
 
 # ---------------------------------------------------------------- categorical
@@ -90,7 +95,27 @@ def categorical_weights(col: ColumnPlan) -> tuple[list[Any], list[float], list[s
     return values, [w / total for w in weights], problems
 
 
+def _synthetic_pool(ctx: GenContext, spec: dict) -> list[str]:
+    """Fresh identifiers (never the source's) for repeated id-like columns."""
+    size = max(1, int(_num(spec.get("size")) or 1))
+    if spec.get("kind") == "uuid":
+        return [str(uuid.UUID(int=ctx.rng.getrandbits(128), version=4)) for _ in range(size)]
+    if spec.get("kind") == "integer":
+        start = int(_num(spec.get("start")) or 1)
+        return [str(i) for i in range(start, start + size)]
+    prefix, width = str(spec.get("prefix", "ID-")), max(len(str(size)), int(_num(spec.get("width")) or 4))
+    start = int(_num(spec.get("start")) or 1)
+    return [f"{prefix}{i:0{width}d}" for i in range(start, start + size)]
+
+
 def _categorical(ctx: GenContext, table: TablePlan, col: ColumnPlan, n: int) -> list[Any]:
+    spec = col.generator.params.get("synthetic_pool")
+    if isinstance(spec, dict):
+        pool = _synthetic_pool(ctx, spec)
+        w = col.generator.params.get("weights")
+        weights = [max(_num(x) or 0.0, 0.0) for x in w] if isinstance(w, list) and len(w) == len(pool) else None
+        out = ctx.rng.choices(pool, weights=weights if weights and sum(weights) > 0 else None, k=n)
+        return [int(v) for v in out] if col.data_type == DataType.INTEGER else out
     values, weights, problems = categorical_weights(col)
     for pr in problems:
         ctx.warn(f"{table.name}.{col.name}: {pr}")
@@ -178,9 +203,17 @@ def _coerce(v: Any, dt: DataType) -> Any:
 
 
 def _clean_date_param(v: Any) -> Any:
-    # Faker reads a lowercase 'm' as minutes; LLMs mean months.
-    if isinstance(v, str) and re.fullmatch(r"[+-]?\d+\s*m", v.strip()):
-        return v.strip()[:-1] + "M"
+    if isinstance(v, str):
+        text = v.strip()
+        # Faker reads a lowercase 'm' as minutes; LLMs mean months.
+        if re.fullmatch(r"[+-]?\d+\s*m", text):
+            return text[:-1] + "M"
+        # Absolute ISO dates/datetimes (from source profiles) become real objects.
+        if re.fullmatch(r"\d{4}-\d{2}-\d{2}([T ]\d{2}:\d{2}(:\d{2})?)?", text):
+            try:
+                return datetime.fromisoformat(text)
+            except ValueError:
+                return v
     return v
 
 
@@ -203,7 +236,7 @@ def faker_call(ctx: GenContext, table: TablePlan, col: ColumnPlan) -> Callable[[
         return lambda: provider(ctx.rng)
 
     fn = getattr(fk, name)
-    params = {k: _clean_date_param(v) for k, v in col.generator.params.items()}
+    params = {k: _clean_date_param(v) for k, v in col.generator.params.items() if k not in RESERVED_PARAMS}
     try:
         fn(**params)  # probe once so bad LLM params degrade instead of crashing
     except Exception:
