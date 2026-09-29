@@ -10,7 +10,7 @@ from collections.abc import Callable
 
 from app.ai.base import BaseLLMProvider
 from app.ai.gemini import create_gemini_provider
-from app.ai.openai_provider import create_openai_provider, create_qwen_provider
+from app.ai.openai_provider import create_groq_provider, create_openai_provider, create_qwen_provider
 from app.config import Settings
 
 logger = logging.getLogger(__name__)
@@ -20,6 +20,7 @@ PROVIDER_FACTORIES: dict[str, Callable[[Settings], BaseLLMProvider | None]] = {
     "gemini": create_gemini_provider,
     "openai": create_openai_provider,
     "qwen": create_qwen_provider,
+    "groq": create_groq_provider,
 }
 
 

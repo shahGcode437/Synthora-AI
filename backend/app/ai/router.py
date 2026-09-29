@@ -20,6 +20,7 @@ from app.ai.errors import (
     ProviderCallError,
     ProviderNotConfiguredError,
 )
+from app.ai.normalize import normalize_for, summarize_validation_error
 from app.models.api import AIRunMeta
 
 logger = logging.getLogger(__name__)
@@ -75,7 +76,8 @@ class LLMRouter:
             for _ in range(self.max_retries + 1):
                 try:
                     raw = await provider.complete_json(request, self.timeout)
-                    parsed = response_model.model_validate(parse_json_output(raw))
+                    payload = normalize_for(response_model.__name__, parse_json_output(raw))
+                    parsed = response_model.model_validate(payload)
                 except ProviderCallError as exc:
                     attempts.append(f"{provider.name}: call failed ({exc})")
                     logger.warning("ai task=%s %s", request.task, attempts[-1])
@@ -83,8 +85,10 @@ class LLMRouter:
                 except InvalidStructuredOutputError as exc:
                     attempts.append(f"{provider.name}: invalid output ({exc})")
                 except ValidationError as exc:
+                    # field paths + error types only, never the offending values
                     attempts.append(
-                        f"{provider.name}: schema validation failed ({exc.error_count()} errors)"
+                        f"{provider.name}: schema validation failed ({exc.error_count()} errors: "
+                        f"{summarize_validation_error(exc)})"
                     )
                 else:
                     meta = AIRunMeta(

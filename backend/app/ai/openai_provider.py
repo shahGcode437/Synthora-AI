@@ -1,4 +1,4 @@
-"""OpenAI-compatible adapters (Chat Completions, JSON mode): OpenAI and Qwen (Alibaba Model Studio).
+"""OpenAI-compatible adapters (Chat Completions, JSON mode): OpenAI, Qwen (Alibaba Model Studio) and Groq.
 Keys, models and base URLs come from settings and are never logged.
 
 JSON mode (not strict json_schema) is used on purpose: GenerationPlan has open-ended
@@ -113,3 +113,19 @@ def create_qwen_provider(settings: Settings) -> QwenProvider | None:
         logger.warning("QWEN_BASE_URL must start with https://; Qwen provider skipped")
         return None
     return QwenProvider(settings.qwen_api_key, settings.qwen_model, base_url=url)
+
+
+GROQ_BASE_URL = "https://api.groq.com/openai/v1"
+
+
+class GroqProvider(OpenAIProvider):
+    """Groq (fast inference, note: not xAI's Grok) via its OpenAI-compatible endpoint."""
+
+    name = "groq"
+    label = "Groq"
+
+
+def create_groq_provider(settings: Settings) -> GroqProvider | None:
+    if not settings.groq_api_key or not settings.groq_model:
+        return None
+    return GroqProvider(settings.groq_api_key, settings.groq_model, base_url=GROQ_BASE_URL)

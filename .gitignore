@@ -24,3 +24,6 @@ Thumbs.db
 .idea/
 
 plan_A.json
+
+# backup-demo outputs
+demo_output/

@@ -1,0 +1,390 @@
+{
+ "plan_version": "1.0",
+ "source_mode": "prompt",
+ "domain": "banking",
+ "summary": "Banking transaction dataset including accounts, merchants, and transactions with running balances and failure states.",
+ "locale": "en_PK",
+ "seed": 42,
+ "tables": [
+  {
+   "name": "accounts",
+   "description": "Customer bank accounts",
+   "target_rows": 50,
+   "columns": [
+    {
+     "name": "account_id",
+     "data_type": "uuid",
+     "semantic_type": "account_id",
+     "description": "Unique identifier for the bank account",
+     "nullable": false,
+     "is_primary_key": true,
+     "is_unique": true,
+     "allowed_values": null,
+     "generator": {
+      "strategy": "deterministic_id",
+      "generator": "uuid4",
+      "params": {},
+      "depends_on": []
+     },
+     "pii": {
+      "classification": "none",
+      "privacy_action": "none",
+      "reason": "System generated UUID"
+     },
+     "confidence": 1.0
+    },
+    {
+     "name": "account_holder_name",
+     "data_type": "string",
+     "semantic_type": "person_name",
+     "description": "Name of the account holder",
+     "nullable": false,
+     "is_primary_key": false,
+     "is_unique": false,
+     "allowed_values": null,
+     "generator": {
+      "strategy": "faker",
+      "generator": "name",
+      "params": {},
+      "depends_on": []
+     },
+     "pii": {
+      "classification": "direct_identifier",
+      "privacy_action": "synthesize",
+      "reason": "Customer name is PII"
+     },
+     "confidence": 1.0
+    },
+    {
+     "name": "current_balance",
+     "data_type": "decimal",
+     "semantic_type": "money_amount",
+     "description": "Current balance of the account",
+     "nullable": false,
+     "is_primary_key": false,
+     "is_unique": false,
+     "allowed_values": null,
+     "generator": {
+      "strategy": "statistical",
+      "generator": "uniform",
+      "params": {
+       "min": 1000.0,
+       "max": 500000.0
+      },
+      "depends_on": []
+     },
+     "pii": {
+      "classification": "sensitive",
+      "privacy_action": "synthesize",
+      "reason": "Financial balance is sensitive"
+     },
+     "confidence": 1.0
+    }
+   ],
+   "primary_key": [
+    "account_id"
+   ],
+   "foreign_keys": []
+  },
+  {
+   "name": "transactions",
+   "description": "Individual banking transactions",
+   "target_rows": 500,
+   "columns": [
+    {
+     "name": "transaction_id",
+     "data_type": "uuid",
+     "semantic_type": "transaction_id",
+     "description": "Unique identifier for the transaction",
+     "nullable": false,
+     "is_primary_key": true,
+     "is_unique": true,
+     "allowed_values": null,
+     "generator": {
+      "strategy": "deterministic_id",
+      "generator": "uuid4",
+      "params": {},
+      "depends_on": []
+     },
+     "pii": {
+      "classification": "none",
+      "privacy_action": "none",
+      "reason": "System generated UUID"
+     },
+     "confidence": 1.0
+    },
+    {
+     "name": "account_id",
+     "data_type": "uuid",
+     "semantic_type": "account_id",
+     "description": "Account associated with the transaction",
+     "nullable": false,
+     "is_primary_key": false,
+     "is_unique": false,
+     "allowed_values": null,
+     "generator": {
+      "strategy": "foreign_key",
+      "generator": null,
+      "params": {
+       "table": "accounts",
+       "column": "account_id"
+      },
+      "depends_on": []
+     },
+     "pii": {
+      "classification": "none",
+      "privacy_action": "none",
+      "reason": "Foreign key"
+     },
+     "confidence": 1.0
+    },
+    {
+     "name": "merchant_name",
+     "data_type": "string",
+     "semantic_type": "merchant_name",
+     "description": "Name of the merchant",
+     "nullable": true,
+     "is_primary_key": false,
+     "is_unique": false,
+     "allowed_values": null,
+     "generator": {
+      "strategy": "faker",
+      "generator": "company",
+      "params": {},
+      "depends_on": []
+     },
+     "pii": {
+      "classification": "none",
+      "privacy_action": "none",
+      "reason": "Merchant entity is not PII"
+     },
+     "confidence": 1.0
+    },
+    {
+     "name": "transaction_type",
+     "data_type": "string",
+     "semantic_type": "transaction_type",
+     "description": "Debit or Credit",
+     "nullable": false,
+     "is_primary_key": false,
+     "is_unique": false,
+     "allowed_values": [
+      "DEBIT",
+      "CREDIT"
+     ],
+     "generator": {
+      "strategy": "categorical",
+      "generator": null,
+      "params": {
+       "weights": {
+        "DEBIT": 0.7,
+        "CREDIT": 0.3
+       }
+      },
+      "depends_on": []
+     },
+     "pii": {
+      "classification": "none",
+      "privacy_action": "none",
+      "reason": "Transaction metadata"
+     },
+     "confidence": 1.0
+    },
+    {
+     "name": "amount",
+     "data_type": "decimal",
+     "semantic_type": "money_amount",
+     "description": "Transaction amount",
+     "nullable": false,
+     "is_primary_key": false,
+     "is_unique": false,
+     "allowed_values": null,
+     "generator": {
+      "strategy": "statistical",
+      "generator": "lognormal",
+      "params": {
+       "mean": 3.5,
+       "sigma": 1.0
+      },
+      "depends_on": []
+     },
+     "pii": {
+      "classification": "sensitive",
+      "privacy_action": "synthesize",
+      "reason": "Financial amount is sensitive"
+     },
+     "confidence": 1.0
+    },
+    {
+     "name": "status",
+     "data_type": "string",
+     "semantic_type": "account_status",
+     "description": "Status of the transaction",
+     "nullable": false,
+     "is_primary_key": false,
+     "is_unique": false,
+     "allowed_values": [
+      "SUCCESS",
+      "FAILED",
+      "PENDING"
+     ],
+     "generator": {
+      "strategy": "categorical",
+      "generator": null,
+      "params": {
+       "weights": {
+        "SUCCESS": 0.9,
+        "FAILED": 0.08,
+        "PENDING": 0.02
+       }
+      },
+      "depends_on": []
+     },
+     "pii": {
+      "classification": "none",
+      "privacy_action": "none",
+      "reason": "Status metadata"
+     },
+     "confidence": 1.0
+    },
+    {
+     "name": "timestamp",
+     "data_type": "datetime",
+     "semantic_type": "signup_date",
+     "description": "Timestamp of the transaction",
+     "nullable": false,
+     "is_primary_key": false,
+     "is_unique": false,
+     "allowed_values": null,
+     "generator": {
+      "strategy": "faker",
+      "generator": "date_time_between",
+      "params": {
+       "start_date": "-1y",
+       "end_date": "now"
+      },
+      "depends_on": []
+     },
+     "pii": {
+      "classification": "none",
+      "privacy_action": "none",
+      "reason": "Timestamp"
+     },
+     "confidence": 1.0
+    },
+    {
+     "name": "running_balance",
+     "data_type": "decimal",
+     "semantic_type": "running_balance",
+     "description": "Account balance after the transaction",
+     "nullable": false,
+     "is_primary_key": false,
+     "is_unique": false,
+     "allowed_values": null,
+     "generator": {
+      "strategy": "derived",
+      "generator": null,
+      "params": {},
+      "depends_on": [
+       "account_id",
+       "amount",
+       "transaction_type",
+       "status"
+      ]
+     },
+     "pii": {
+      "classification": "sensitive",
+      "privacy_action": "synthesize",
+      "reason": "Running balance is sensitive financial data"
+     },
+     "confidence": 1.0
+    }
+   ],
+   "primary_key": [
+    "transaction_id"
+   ],
+   "foreign_keys": [
+    {
+     "column": "account_id",
+     "references_table": "accounts",
+     "references_column": "account_id"
+    }
+   ]
+  }
+ ],
+ "relationships": [
+  {
+   "parent_table": "accounts",
+   "parent_column": "account_id",
+   "child_table": "transactions",
+   "child_column": "account_id",
+   "cardinality": "1:N",
+   "confidence": 1.0
+  }
+ ],
+ "business_rules": [
+  {
+   "id": "br_tx_account_exists",
+   "description": "Every transaction must reference a valid account_id in the accounts table.",
+   "tables": [
+    "transactions",
+    "accounts"
+   ],
+   "expression": "transactions.account_id in accounts.account_id",
+   "severity": "error"
+  },
+  {
+   "id": "br_running_balance",
+   "description": "Running balance must update correctly based on transaction type and amount only if status is SUCCESS.",
+   "tables": [
+    "transactions"
+   ],
+   "expression": "running_balance = previous_balance + (amount if transaction_type == 'CREDIT' else -amount) if status == 'SUCCESS' else previous_balance",
+   "severity": "error"
+  },
+  {
+   "id": "br_failed_transactions",
+   "description": "Failed transactions should have a small representative rate within the dataset.",
+   "tables": [
+    "transactions"
+   ],
+   "expression": "count(status == 'FAILED') / count(*) <= 0.15",
+   "severity": "warning"
+  }
+ ],
+ "edge_cases": {
+  "mode": "ai_recommended",
+  "null_rate": 0.05,
+  "outlier_rate": 0.02,
+  "rare_category_rate": 0.02,
+  "recommendations": [
+   {
+    "name": "failed_transactions",
+    "kind": "status_scenario",
+    "description": "Include a small subset of failed transactions",
+    "table": "transactions",
+    "column": "status",
+    "rate": 0.08,
+    "rationale": "Matches prompt requirement for failed transactions."
+   },
+   {
+    "name": "large_outlier_amounts",
+    "kind": "outlier",
+    "description": "Unusually large transaction amounts for fraud detection testing",
+    "table": "transactions",
+    "column": "amount",
+    "rate": 0.02,
+    "rationale": "Simulates whale transactions or anomalies."
+   }
+  ]
+ },
+ "privacy": {
+  "mode": "auto"
+ },
+ "confidence": 0.95,
+ "warnings": [],
+ "assumptions": [
+  "Used en_PK locale to align with user preference while relying on standard currency and structure.",
+  "Target rows split logically between accounts (50) and transactions (500)."
+ ]
+}

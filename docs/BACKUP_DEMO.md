@@ -1,0 +1,85 @@
+# BACKUP_DEMO.md
+
+**Golden rule: never present backup material as live.** Say "this plan was saved from an earlier live AI run" whenever the AI step is skipped.
+
+## What needs an LLM, and what doesn't
+
+| Step | Needs LLM / internet? |
+|---|---|
+| `POST /analyze` (prompt → plan) | **Yes** (Gemini, then Groq fallback) |
+| `POST /analyze/sample` (CSV → profile → plan) | **Yes** (profiling is local, the plan step calls the LLM) |
+| `POST /generate` (plan → rows + validation) | **No** |
+| `POST /export` (CSV / JSON / ZIP) | **No** |
+| Frontend (`npm run dev`), backend, `/health`, `/docs` | **No** (all local) |
+
+So if the AI is unavailable, **generation, validation and export are still 100% live** — only the "AI understands" step needs a saved plan.
+
+## Pre-flight checklist (do this 10 minutes before)
+
+1. Backend up: `http://127.0.0.1:8000/health` → `{"status":"ok"…}`; frontend shows **API Online**.
+2. Run **one** real prompt end-to-end (hospital chip). Note the provider and latency in the header.
+3. Confirm `backend/.env` order is `LLM_PROVIDER_ORDER=gemini,groq` and both keys/models are set (never show this file on screen).
+4. Generate the backup files now, so they exist on disk before you need them:
+   ```bash
+   python scripts/backup_demo.py hospital
+   python scripts/backup_demo.py ecommerce
+   python scripts/backup_demo.py banking
+   python scripts/backup_demo.py csv-customers
+   ```
+   Files land in `demo_output/` (git-ignored).
+
+## Scenario 1 — Gemini rate limit / overload
+
+Symptom: the analyze step shows *"The AI is busy right now"* with per-provider details.
+- **Normally this is invisible:** the router already fails over to **Groq** and the header shows `groq · N s · 1 fallback`. Say so — it is a feature.
+- If both providers fail: wait ~60 seconds (free-tier limits are per minute) and click **Retry** once. Do not spam retries.
+- Still failing → Scenario 3.
+
+## Scenario 2 — Internet failure
+
+- The app itself keeps working (everything is local). The analyze step will show *"Can't reach the backend"* or *"AI is busy"* because the LLM is unreachable.
+- Switch to Scenario 3. Do not attempt more analyses.
+
+## Scenario 3 — No live LLM available: use saved plans
+
+Saved **real** plans (produced earlier by live Gemini runs):
+
+| Name | File | Shows |
+|---|---|---|
+| `ecommerce` | `backend/tests/fixtures/plan_a.json` | single table, Pakistani locale, derived email |
+| `hospital` | `backend/tests/fixtures/plan_b_hospital.json` | 3 tables, 2 foreign keys |
+| `banking` | `backend/tests/fixtures/plan_c_banking.json` | derived running balance, failed-transaction edge case |
+| `csv-customers` | `docs/examples/analyze_sample_response.json` | CSV-mode plan (grounded in a source profile) |
+
+**Option A — one command (recommended).** Runs the saved plan through the *live* `/generate` and `/export` endpoints and prints the validation result:
+```bash
+python scripts/backup_demo.py hospital
+```
+Show the terminal output (rows per table, validation PASSED, exported ZIP), then open the ZIP and CSVs from `demo_output/`.
+
+**Option B — Swagger UI.** Open `http://127.0.0.1:8000/docs` → `POST /api/v1/generate` → paste `docs/examples/generate_request.json` → Execute. Show `data`, `validation`, `metadata`. Then `POST /api/v1/export` with `docs/examples/export_request.json`.
+
+**Option C — show the saved AI outputs.** Open `docs/examples/analyze_prompt_response.json` and `docs/examples/analyze_sample_response.json` in an editor: real Gemini plans, including PII classification, business rules, edge cases and the source profile with **masked** samples.
+
+## Scenario 4 — Show the Groq fallback deliberately (only if asked, and only if Groq is configured)
+
+This makes Gemini fail on purpose for one process only (nothing in `.env` changes):
+```bash
+cd backend
+GEMINI_MODEL=not-a-real-model .venv/Scripts/python.exe -m uvicorn app.main:app --port 8000
+```
+(PowerShell: `$env:GEMINI_MODEL="not-a-real-model"; .venv\Scripts\python.exe -m uvicorn app.main:app --port 8000`, then `Remove-Item Env:GEMINI_MODEL`.)
+Run one analysis → header shows **groq** with **1 fallback**. **Restart the backend normally afterwards.** Use at most one call: Groq's free tier rate-limits quickly.
+
+## What the frontend can and cannot do without an LLM
+
+- **Cannot:** load a saved plan into the workspace (there is no "import plan" feature) — the Plan/Quality screens need a live analysis in the same session.
+- **Can:** show the backend health, the Input form and validation states, the *offline* and *error/Retry* UI, and — via the script or Swagger — live generation, validation and exports.
+- **Best fallback story:** show a screenshot or screen recording of the full UI flow captured during pre-flight (record one successful run in advance), label it as a recording, then run Scenario 3 live for the generation/validation/export part.
+
+## What NOT to do
+
+- Don't say a saved plan was "just generated by the AI".
+- Don't edit backup JSON to look better.
+- Don't show `backend/.env` or the browser's network tab with request headers.
+- Don't rerun failing AI calls in a loop — it burns the free-tier quota you need for the real demo.
