@@ -6,6 +6,15 @@ from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+# Always allowed, regardless of the CORS_ORIGINS env var: the deployed frontend and local dev.
+# (An env var that only lists localhost - e.g. copied from .env.example - must not lock out production.)
+BUILTIN_CORS_ORIGINS = (
+    "https://synthora-ai-nine.vercel.app",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+)
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
@@ -31,7 +40,10 @@ class Settings(BaseSettings):
 
     @property
     def cors_origin_list(self) -> list[str]:
-        return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+        """Built-in origins plus CORS_ORIGINS extras. Trailing slashes are stripped (browsers send none);
+        a wildcard is ignored because credentials are enabled."""
+        extra = [o.strip().rstrip("/") for o in self.cors_origins.split(",") if o.strip()]
+        return list(dict.fromkeys([*BUILTIN_CORS_ORIGINS, *(o for o in extra if o != "*")]))
 
     @property
     def provider_order(self) -> list[str]:

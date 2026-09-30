@@ -27,3 +27,6 @@ plan_A.json
 
 # backup-demo outputs
 demo_output/
+
+# public, non-secret build-time API URL for the deployed frontend
+!frontend/.env.production
