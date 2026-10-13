@@ -2,7 +2,8 @@ import { AlertCircle, ChevronRight, Inbox, RotateCcw } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { cn } from "../lib/cn";
 import { Link } from "../router";
-import { Button, Skeleton } from "./ui";
+import { libraryMode } from "../api/library";
+import { Button, Callout, Skeleton } from "./ui";
 
 export interface Crumb { label: string; to?: string }
 
@@ -78,5 +79,17 @@ export function Avatar({ name, src, className }: { name: string; src?: string | 
   }
   return (
     <span aria-hidden="true" className={cn("flex size-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-accent to-sky-400 text-xs font-bold text-canvas", className)}>{text}</span>
+  );
+}
+
+/** Shown on saved-work pages when this deployment's server has no saved-work storage, so the data lives in this browser. */
+export function LocalStorageNote() {
+  if (libraryMode() !== "local") return null;
+  return (
+    <div className="mb-4">
+      <Callout tone="info" title="Saved in this browser">
+        This server doesn't store saved work, so history, schemas and datasets are kept in this browser only. Clearing site data removes them.
+      </Callout>
+    </div>
   );
 }

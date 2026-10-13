@@ -1,6 +1,6 @@
 import { Database, History, PlayCircle, Shapes, Sparkles } from "lucide-react";
 import { history as api } from "../../api/library";
-import { PageHeader } from "../../components/page";
+import { PageHeader, LocalStorageNote } from "../../components/page";
 import { Badge, Button, Callout, Card, CardHeader, Skeleton, StatCard } from "../../components/ui";
 import { fmtInt } from "../../lib/format";
 import { useAsync } from "../../lib/useAsync";
@@ -28,6 +28,7 @@ export function OverviewPage() {
         </Callout>
       )}
 
+      <LocalStorageNote />
       <div className="mt-5">
         {ov.loading && !ov.data ? (
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">{[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-24" />)}</div>

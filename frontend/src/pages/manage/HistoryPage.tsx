@@ -2,7 +2,7 @@ import { CheckCircle2, History, PlayCircle, Trash2, XCircle } from "lucide-react
 import { useCallback, useEffect, useState } from "react";
 import { history as api, type RunSummary } from "../../api/library";
 import { ConfirmDialog } from "../../components/Dialog";
-import { EmptyState, ErrorState, ListSkeleton, PageHeader } from "../../components/page";
+import { EmptyState, ErrorState, ListSkeleton, PageHeader, LocalStorageNote } from "../../components/page";
 import { useToast } from "../../components/Toast";
 import { Badge, Button, Callout, Card, Segmented } from "../../components/ui";
 import { fmtInt } from "../../lib/format";
@@ -56,6 +56,7 @@ export function HistoryPage() {
       <PageHeader crumbs={[{ label: "Management", to: "/app/overview" }, { label: "Generation History" }]} title="Generation history"
         description="Every generation made in this browser's workspace. History keeps the plan and the validation summary, not the generated rows: save a dataset to keep rows."
         actions={total > 0 || status !== "all" ? <Button variant="ghost" className="text-rose-300" icon={<Trash2 className="size-4" />} onClick={() => { setDel("all"); setDelError(null); }}>Clear history</Button> : undefined} />
+      <LocalStorageNote />
       <div className="mb-4"><Segmented<Status> value={status} onChange={(v) => { setStatus(v); setOffset(0); }}
         options={[{ value: "all", label: "All" }, { value: "passed", label: "Passed" }, { value: "failed", label: "Failed" }]} /></div>
 

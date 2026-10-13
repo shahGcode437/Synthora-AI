@@ -2,7 +2,7 @@ import { Pencil, PlayCircle, Plus, Shapes, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { schemas as api, type SchemaSummary } from "../../api/library";
 import { ConfirmDialog, Dialog } from "../../components/Dialog";
-import { EmptyState, ErrorState, ListSkeleton, PageHeader } from "../../components/page";
+import { EmptyState, ErrorState, ListSkeleton, PageHeader, LocalStorageNote } from "../../components/page";
 import { useToast } from "../../components/Toast";
 import { Badge, Button, Callout, Card, Input, Label, Textarea } from "../../components/ui";
 import { useAsync, errMsg } from "../../lib/useAsync";
@@ -53,6 +53,7 @@ export function SchemasPage() {
         description="Saved Generation Plans. Load one to review it and generate again: no AI call is made, so it works even when the AI is busy."
         actions={<><SaveSchemaButton />{!ws.state.plan && <Button variant="primary" icon={<Plus className="size-4" />} onClick={() => go("/app/input")}>New schema</Button>}</>} />
       {ws.state.plan && <Callout tone="info" title="You have a plan in this session">Use “Save as schema” above to keep it, including any row-count edits.</Callout>}
+      <LocalStorageNote />
       <div className="mt-5">
         {list.loading && !list.data ? <ListSkeleton /> : list.error ? <ErrorState message={list.error} onRetry={list.reload} />
           : items.length === 0 ? (

@@ -1,6 +1,7 @@
 // History, saved schemas and saved datasets of this browser's anonymous workspace (no account; see docs/DATABASE_SETUP.md).
 import { ApiError, TIMEOUT, send } from "./client";
-import type { GeneratedData, GenerationPlan } from "./types";
+import { localDatasets, localHistory, localSchemas } from "./localLibrary";
+import type { GeneratedData, GenerateResponse, GenerationPlan } from "./types";
 
 export interface RunSummary {
   id: string; created_at: string; source_mode: string; domain: string; data_type: "tabular" | "relational";
@@ -28,20 +29,14 @@ export interface DatasetSummary {
 }
 export interface DatasetDetail extends DatasetSummary { plan: GenerationPlan | null; preview: GeneratedData }
 
-/** An older backend has no saved-work routes at all (plain 404 "Not Found"): say so, instead of a bare "Not Found". */
-const unavailable = (e: unknown) => e instanceof ApiError && e.status === 404 && e.code === "http_error"
-  ? new ApiError(404, "saved_work_unavailable", "Saved work (history, schemas, datasets) isn't available on this server yet. Generating, previewing and exporting still work.")
-  : e;
-const json = async <T>(p: string, init?: RequestInit): Promise<T> => {
-  try { return await (await send(p, init ?? {}, TIMEOUT.library)).json(); } catch (e) { throw unavailable(e); }
-};
+const json = async <T>(p: string, init?: RequestInit): Promise<T> => (await send(p, init ?? {}, TIMEOUT.library)).json();
 const body = (method: string, data?: unknown): RequestInit => ({
   method, headers: data === undefined ? undefined : { "Content-Type": "application/json" },
   body: data === undefined ? undefined : JSON.stringify(data),
 });
-const none = async (p: string, init: RequestInit): Promise<void> => { try { await send(p, init, TIMEOUT.library); } catch (e) { throw unavailable(e); } };
+const none = async (p: string, init: RequestInit): Promise<void> => { await send(p, init, TIMEOUT.library); };
 
-export const history = {
+const remoteHistory = {
   list: (p: { limit?: number; offset?: number; status?: "all" | "passed" | "failed" } = {}) => {
     const q = new URLSearchParams();
     Object.entries(p).forEach(([k, v]) => v !== undefined && q.set(k, String(v)));
@@ -53,7 +48,7 @@ export const history = {
   overview: () => json<Overview>("/api/v1/overview"),
 };
 
-export const schemas = {
+const remoteSchemas = {
   list: () => json<SchemaSummary[]>("/api/v1/schemas"),
   get: (id: string) => json<SchemaDetail>(`/api/v1/schemas/${id}`),
   create: (d: { name: string; description?: string | null; plan: GenerationPlan }) => json<SchemaDetail>("/api/v1/schemas", body("POST", d)),
@@ -61,7 +56,7 @@ export const schemas = {
   remove: (id: string) => none(`/api/v1/schemas/${id}`, body("DELETE")),
 };
 
-export const datasets = {
+const remoteDatasets = {
   list: () => json<DatasetSummary[]>("/api/v1/datasets"),
   get: (id: string) => json<DatasetDetail>(`/api/v1/datasets/${id}`),
   data: (id: string) => json<GeneratedData>(`/api/v1/datasets/${id}/data`),
@@ -69,3 +64,47 @@ export const datasets = {
     json<DatasetSummary>("/api/v1/datasets", body("POST", d)),
   remove: (id: string) => none(`/api/v1/datasets/${id}`, body("DELETE")),
 };
+
+// ---- server first, browser storage when the server has no saved-work endpoints --------------------------------------
+// A backend that predates saved work answers these routes with a plain 404. Then everything is kept in this browser
+// instead (see localLibrary.ts), so Overview, Schemas, Datasets and History keep working on any deployment.
+type Mode = "unknown" | "server" | "local";
+let mode: Mode = "unknown";
+/** Where saved work currently lives: the server, this browser, or not known yet. */
+export const libraryMode = (): Mode => mode;
+
+const missing = (e: unknown) => e instanceof ApiError && e.status === 404 && e.code === "http_error";
+async function route<T>(remote: () => Promise<T>, local: () => Promise<T>): Promise<T> {
+  if (mode === "local") return local();
+  try { const r = await remote(); mode = "server"; return r; }
+  catch (e) { if (missing(e)) { mode = "local"; return local(); } throw e; }
+}
+
+export const history = {
+  list: (p: Parameters<typeof remoteHistory.list>[0] = {}) => route(() => remoteHistory.list(p), () => localHistory.list(p)),
+  get: (id: string) => route(() => remoteHistory.get(id), () => localHistory.get(id)),
+  remove: (id: string) => route(() => remoteHistory.remove(id), () => localHistory.remove(id)),
+  clear: () => route(() => remoteHistory.clear(), () => localHistory.clear()),
+  overview: () => route(() => remoteHistory.overview(), () => localHistory.overview()),
+};
+export const schemas = {
+  list: () => route(() => remoteSchemas.list(), () => localSchemas.list()),
+  get: (id: string) => route(() => remoteSchemas.get(id), () => localSchemas.get(id)),
+  create: (d: Parameters<typeof remoteSchemas.create>[0]) => route(() => remoteSchemas.create(d), () => localSchemas.create(d)),
+  update: (id: string, d: Parameters<typeof remoteSchemas.update>[1]) => route(() => remoteSchemas.update(id, d), () => localSchemas.update(id, d)),
+  remove: (id: string) => route(() => remoteSchemas.remove(id), () => localSchemas.remove(id)),
+};
+export const datasets = {
+  list: () => route(() => remoteDatasets.list(), () => localDatasets.list()),
+  get: (id: string) => route(() => remoteDatasets.get(id), () => localDatasets.get(id)),
+  data: (id: string) => route(() => remoteDatasets.data(id), () => localDatasets.data(id)),
+  create: (d: Parameters<typeof remoteDatasets.create>[0]) => route(() => remoteDatasets.create(d), () => localDatasets.create(d)),
+  remove: (id: string) => route(() => remoteDatasets.remove(id), () => localDatasets.remove(id)),
+};
+
+/** After a generation: when saved work lives in this browser, record the run in local history. (The server records
+ * its own runs while generating.) The first call probes the server so the mode is known. */
+export async function recordRun(plan: GenerationPlan, res: GenerateResponse): Promise<void> {
+  if (mode === "unknown") { try { await history.overview(); } catch { return; } }
+  if (mode === "local") localHistory.record(plan, res);
+}

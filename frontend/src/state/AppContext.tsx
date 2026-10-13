@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import type { SampleControls } from "../api/client";
+import { recordRun } from "../api/library";
 import type { AnalyzeRequest, GenerationPlan } from "../api/types";
 import { defaultControls, type Controls } from "../sections/ControlsFields";
 import { useRouter } from "../router";
@@ -60,6 +61,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
     if (p.phase === "generating" && state.phase === "generated" && state.result) {
       const ok = state.result.validation.passed;
+      if (state.plan) void recordRun(state.plan, state.result);
       push(ok ? "success" : "warning", "Data generated",
         `${state.result.metadata.rows_generated.toLocaleString()} rows · validation ${ok ? "passed" : `found ${state.result.validation.error_count} error(s)`}`);
     }

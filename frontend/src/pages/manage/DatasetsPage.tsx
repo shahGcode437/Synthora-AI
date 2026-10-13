@@ -5,7 +5,7 @@ import { exportData, saveBlob } from "../../api/client";
 import type { ExportFormat } from "../../api/types";
 import { DataGrid } from "../../components/DataGrid";
 import { ConfirmDialog, Dialog } from "../../components/Dialog";
-import { EmptyState, ErrorState, ListSkeleton, PageHeader } from "../../components/page";
+import { EmptyState, ErrorState, ListSkeleton, PageHeader, LocalStorageNote } from "../../components/page";
 import { Segmented, Badge, Button, Callout, Card, Skeleton } from "../../components/ui";
 import { useToast } from "../../components/Toast";
 import { fmtBytes, fmtInt } from "../../lib/format";
@@ -51,6 +51,7 @@ export function DatasetsPage() {
         description="Generated data you chose to keep. Open it in the data views, preview it, or export it again."
         actions={<SaveDatasetButton />} />
       {ws.state.result && <Callout tone="info" title="You have unsaved generated data">Use “Save dataset” above to keep this session's rows.</Callout>}
+      <LocalStorageNote />
       <div className="mt-5">
         {list.loading && !list.data ? <ListSkeleton /> : list.error ? <ErrorState message={list.error} onRetry={list.reload} />
           : items.length === 0 ? (
