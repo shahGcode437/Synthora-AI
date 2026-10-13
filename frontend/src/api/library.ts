@@ -1,5 +1,5 @@
 // History, saved schemas and saved datasets of this browser's anonymous workspace (no account; see docs/DATABASE_SETUP.md).
-import { TIMEOUT, send } from "./client";
+import { ApiError, TIMEOUT, send } from "./client";
 import type { GeneratedData, GenerationPlan } from "./types";
 
 export interface RunSummary {
@@ -28,12 +28,18 @@ export interface DatasetSummary {
 }
 export interface DatasetDetail extends DatasetSummary { plan: GenerationPlan | null; preview: GeneratedData }
 
-const json = async <T>(p: string, init?: RequestInit): Promise<T> => (await send(p, init ?? {}, TIMEOUT.library)).json();
+/** An older backend has no saved-work routes at all (plain 404 "Not Found"): say so, instead of a bare "Not Found". */
+const unavailable = (e: unknown) => e instanceof ApiError && e.status === 404 && e.code === "http_error"
+  ? new ApiError(404, "saved_work_unavailable", "Saved work (history, schemas, datasets) isn't available on this server yet. Generating, previewing and exporting still work.")
+  : e;
+const json = async <T>(p: string, init?: RequestInit): Promise<T> => {
+  try { return await (await send(p, init ?? {}, TIMEOUT.library)).json(); } catch (e) { throw unavailable(e); }
+};
 const body = (method: string, data?: unknown): RequestInit => ({
   method, headers: data === undefined ? undefined : { "Content-Type": "application/json" },
   body: data === undefined ? undefined : JSON.stringify(data),
 });
-const none = async (p: string, init: RequestInit): Promise<void> => { await send(p, init, TIMEOUT.library); };
+const none = async (p: string, init: RequestInit): Promise<void> => { try { await send(p, init, TIMEOUT.library); } catch (e) { throw unavailable(e); } };
 
 export const history = {
   list: (p: { limit?: number; offset?: number; status?: "all" | "passed" | "failed" } = {}) => {
