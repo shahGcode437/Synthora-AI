@@ -1,6 +1,7 @@
 import { ArrowRight, Bot, Braces, Check, Database, FileArchive, FileInput, FileSpreadsheet, FileText, GitBranch, Layers, Network, Quote, Scale, ScanSearch, ShieldCheck, Sparkles, Table2 } from "lucide-react";
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { cn } from "../lib/cn";
+import { ACCOUNTS_ENABLED } from "../auth/config";
 import { Link } from "../router";
 import { SceneLoader } from "../three/SceneLoader";
 import { PublicFooter, PublicHeader } from "./PublicLayout";
@@ -343,8 +344,14 @@ export function Landing() {
           <FileInput className="relative mx-auto mb-4 size-7 text-accent" /><ScanSearch className="hidden" />
           <h2 className="relative text-3xl font-semibold tracking-tight sm:text-4xl">Generate your first dataset.</h2>
           <p className="relative mx-auto mt-3 max-w-md text-fg-dim">Describe it or upload a sample. You review the plan before anything is generated.</p>
-          <Link to="/signup" className="relative mt-7 inline-flex items-center gap-2 rounded-xl bg-accent px-7 py-3 font-semibold text-canvas transition hover:bg-accent-soft">Create a free account <ArrowRight className="size-4" /></Link>
-          <p className="relative mt-3 text-xs text-fg-mute">Or <Link to="/app/input" className="text-accent underline">try the generator without an account</Link>.</p>
+          {ACCOUNTS_ENABLED ? (
+            <>
+              <Link to="/signup" className="relative mt-7 inline-flex items-center gap-2 rounded-xl bg-accent px-7 py-3 font-semibold text-canvas transition hover:bg-accent-soft">Create a free account <ArrowRight className="size-4" /></Link>
+              <p className="relative mt-3 text-xs text-fg-mute">Or <Link to="/app/input" className="text-accent underline">try the generator without an account</Link>.</p>
+            </>
+          ) : (
+            <Link to="/app/input" className="relative mt-7 inline-flex items-center gap-2 rounded-xl bg-accent px-7 py-3 font-semibold text-canvas transition hover:bg-accent-soft">Start Generating <ArrowRight className="size-4" /></Link>
+          )}
         </div>
       </section>
       <PublicFooter />

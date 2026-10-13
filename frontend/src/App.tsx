@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, type ReactNode } from "react";
+import { ACCOUNTS_ENABLED } from "./auth/config";
 import { AuthProvider, PUBLIC_APP_PATHS, useAuth } from "./auth/AuthContext";
 import { ToastProvider } from "./components/Toast";
 import { Spinner } from "./components/ui";
@@ -33,13 +34,16 @@ const Loading = () => <div className="grid min-h-screen place-items-center"><Spi
 /** Account-only pages send guests to sign in, and bring them back afterwards. */
 function RequireAuth({ path, children }: { path: string; children: ReactNode }) {
   const { status } = useAuth();
-  if (PUBLIC_APP_PATHS.has(path)) return <>{children}</>;
+  if (!ACCOUNTS_ENABLED || PUBLIC_APP_PATHS.has(path)) return <>{children}</>;
   if (status === "loading") return <Loading />;
   if (status === "guest") return <Redirect to={`/login?next=${encodeURIComponent(path)}`} />;
   return <>{children}</>;
 }
 
+const ACCOUNT_ONLY = new Set(["overview", "schemas", "datasets", "history", "profile"]);
+
 function AppPage({ name }: { name: string }) {
+  if (!ACCOUNTS_ENABLED && ACCOUNT_ONLY.has(name)) return <Redirect to="/app/input" />;
   switch (name) {
     case "overview": return <OverviewPage />;
     case "tabular": return <TabularPage />;
@@ -65,9 +69,10 @@ function Routes() {
   if (path === "/") return <Suspense fallback={<Loading />}><Landing /></Suspense>;
   if (path === "/about") return <PublicPage><AboutContent /></PublicPage>;
   if (path === "/docs") return <PublicPage><HelpContent pub /></PublicPage>;
+  if ((path === "/login" || path === "/signup") && !ACCOUNTS_ENABLED) return <Redirect to="/app/input" />;
   if (path === "/login") return <LoginPage />;
   if (path === "/signup") return <SignupPage />;
-  if (path === "/app") return <Redirect to="/app/overview" />;
+  if (path === "/app") return <Redirect to={ACCOUNTS_ENABLED ? "/app/overview" : "/app/input"} />;
   if (path.startsWith("/app/")) {
     return <RequireAuth path={path}><AppShell><AppPage name={path.slice(5)} /></AppShell></RequireAuth>;
   }

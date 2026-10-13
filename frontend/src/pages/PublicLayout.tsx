@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { API_BASE } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
+import { ACCOUNTS_ENABLED } from "../auth/config";
 import { Logo } from "../components/Logo";
 import { Link } from "../router";
 
@@ -20,7 +21,9 @@ export function PublicHeader({ landing = false }: { landing?: boolean }) {
           {landing && <a href="#types" className={`${nav} hidden lg:inline`}>Data Types</a>}
           {landing && <a href="#capabilities" className={`${nav} hidden lg:inline`}>Features</a>}
           <Link to="/docs" className={nav}>Docs</Link>
-          {status === "authed"
+          {!ACCOUNTS_ENABLED
+            ? <Link to="/app/input" className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-canvas transition-colors hover:bg-accent-soft">Start Generating</Link>
+            : status === "authed"
             ? <Link to="/app/overview" className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-canvas transition-colors hover:bg-accent-soft">Open app</Link>
             : <>
                 <Link to="/login" className={nav}>Sign In</Link>

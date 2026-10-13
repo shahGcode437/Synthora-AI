@@ -7,12 +7,14 @@ import type { Crumb } from "../components/page";
 export interface NavLeaf { key: string; label: string; to: string; icon: ReactNode; auth?: boolean; match?: (path: string) => boolean }
 export interface NavGroup { title: string; items: NavLeaf[] }
 
+import { ACCOUNTS_ENABLED } from "../auth/config";
+
 const ic = "size-[18px]";
 export const GENERATOR_PATHS = ["input", "analyze", "plan", "generate", "validate", "quality", "export"];
 export const isGeneratorPath = (path: string) => GENERATOR_PATHS.some((s) => path === `/app/${s}`);
 
 /** Every entry maps to a real page. `auth` items are reachable only when signed in (guests are sent to Sign in). */
-export const NAV: NavGroup[] = [
+const ALL_NAV: NavGroup[] = [
   { title: "Workspace", items: [
     { key: "overview", label: "Overview", to: "/app/overview", icon: <LayoutDashboard className={ic} /> },
     { key: "generator", label: "Data Generator", to: "/app/input", icon: <Sparkles className={ic} />, match: isGeneratorPath },
@@ -30,6 +32,11 @@ export const NAV: NavGroup[] = [
     { key: "settings", label: "Settings", to: "/app/settings", icon: <Settings className={ic} /> },
   ] },
 ];
+
+/** Without accounts there is no Overview, Management group or Profile: only pages that work for everyone. */
+export const NAV: NavGroup[] = ACCOUNTS_ENABLED
+  ? ALL_NAV
+  : ALL_NAV.map((g) => ({ ...g, items: g.items.filter((i) => !i.auth && i.key !== "overview") })).filter((g) => g.items.length > 0);
 
 export const isActive = (item: NavLeaf, path: string) => (item.match ? item.match(path) : path === item.to || path.startsWith(`${item.to}/`));
 

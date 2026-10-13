@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { auth as authApi, type AuthResponse, type User } from "../api/accounts";
 import { ApiError, onUnauthorized, setCsrfToken } from "../api/client";
 import { useRouter } from "../router";
+import { ACCOUNTS_ENABLED } from "./config";
 import { hasSignedInHint, purgeLegacyToken, setSignedInHint, SIGNED_IN_HINT_KEY } from "./storage";
 
 export type AuthStatus = "loading" | "authed" | "guest";
@@ -33,7 +34,7 @@ export function useAuth(): AuthCtx {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { path, go } = useRouter();
-  const [status, setStatus] = useState<AuthStatus>(() => { purgeLegacyToken(); return hasSignedInHint() ? "loading" : "guest"; });
+  const [status, setStatus] = useState<AuthStatus>(() => { purgeLegacyToken(); return ACCOUNTS_ENABLED && hasSignedInHint() ? "loading" : "guest"; });
   const [user, setUserState] = useState<User | null>(null);
   const [expired, setExpired] = useState(false);
   const pathRef = useRef(path);
@@ -67,13 +68,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => { live = false; };
   }, [adopt, drop]);
 
-  useEffect(() => { if (hasSignedInHint()) return restore(); }, [restore]);
+  useEffect(() => { if (ACCOUNTS_ENABLED && hasSignedInHint()) return restore(); }, [restore]);
 
   // Returning to the tab re-checks the session, so one revoked or expired elsewhere is noticed promptly.
   useEffect(() => {
     let last = Date.now();
     const onFocus = () => {
-      if (!hasSignedInHint() || Date.now() - last < 60_000) return;
+      if (!ACCOUNTS_ENABLED || !hasSignedInHint() || Date.now() - last < 60_000) return;
       last = Date.now();
       authApi.session().then(adopt).catch((e) => { if (e instanceof ApiError && !e.isNetwork) drop(); });
     };

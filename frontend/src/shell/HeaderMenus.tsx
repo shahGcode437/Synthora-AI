@@ -1,6 +1,7 @@
 import { Bell, BookOpen, ChevronDown, Info, Keyboard, LogIn, LogOut, Moon, Settings as Cog, Sun, Trash2, UserRound } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "../auth/AuthContext";
+import { ACCOUNTS_ENABLED } from "../auth/config";
 import { useToast } from "../components/Toast";
 import { Avatar } from "../components/page";
 import { cn } from "../lib/cn";
@@ -84,6 +85,7 @@ export function UserMenu({ onShortcuts }: { onShortcuts: () => void }) {
   const ref = useDismiss(open, close);
   const item = "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[13px] text-fg-dim outline-none transition-colors hover:bg-panel-2 hover:text-fg focus-visible:bg-panel-2";
 
+  if (!ACCOUNTS_ENABLED) return null;
   if (status === "loading") return <div className="size-8 animate-pulse rounded-full bg-panel-3" aria-label="Loading account" />;
   if (status !== "authed" || !user) {
     const next = `?next=${encodeURIComponent(path)}`;

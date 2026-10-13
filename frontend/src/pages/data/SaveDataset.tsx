@@ -3,6 +3,7 @@ import { useState } from "react";
 import { datasets, schemas } from "../../api/accounts";
 import { ApiError } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
+import { ACCOUNTS_ENABLED } from "../../auth/config";
 import { Dialog } from "../../components/Dialog";
 import { useToast } from "../../components/Toast";
 import { Button, Callout, Input, Label } from "../../components/ui";
@@ -38,6 +39,7 @@ export function SaveDatasetButton({ size = "sm", variant = "secondary" }: { size
     finally { setBusy(false); }
   };
 
+  if (!ACCOUNTS_ENABLED) return null;
   return (
     <>
       <Button size={size} variant={variant} icon={<Save className="size-3.5" />} onClick={click} disabled={saved}>{saved ? "Saved" : status === "authed" ? "Save dataset" : "Sign in to save"}</Button>
@@ -79,6 +81,7 @@ export function SaveSchemaButton({ size = "sm", variant = "secondary" }: { size?
     catch (e) { setError(e instanceof ApiError ? e.message : "Could not save the schema."); }
     finally { setBusy(false); }
   };
+  if (!ACCOUNTS_ENABLED) return null;
   return (
     <>
       <Button size={size} variant={variant} icon={<Save className="size-3.5" />} onClick={click} disabled={saved}>{saved ? "Schema saved" : status === "authed" ? "Save as schema" : "Sign in to save"}</Button>
