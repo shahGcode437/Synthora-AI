@@ -4,8 +4,7 @@ import { cellText, columnsOf, filterRows, nextSort, paginate, sortRows, type Fil
 import { buildModel, describeNesting, makeDocBuilder } from "../src/lib/documents";
 import { levels, layoutGraph } from "../src/lib/graph";
 import { checkIntegrity, relationsOf } from "../src/lib/integrity";
-import { passwordOk, passwordRules, passwordStrength, validEmail } from "../src/lib/password";
-import { normalize, safeNext } from "../src/router";
+import { normalize } from "../src/router";
 
 const plan = (over: Partial<GenerationPlan> = {}): GenerationPlan => ({
   plan_version: "1.0", source_mode: "prompt", domain: "shop", summary: null, locale: null, seed: null, confidence: null,
@@ -160,36 +159,8 @@ describe("graph layout", () => {
   });
 });
 
-describe("password rules (mirror the server)", () => {
-  test("accepts a good password and rejects each bad case", () => {
-    expect(passwordOk("correct-horse-42")).toBe(true);
-    expect(passwordOk("short1")).toBe(false);
-    expect(passwordOk("onlyletterslong")).toBe(false);
-    expect(passwordOk("1234567890")).toBe(false);
-    expect(passwordOk("aaaaaaaa11")).toBe(false);
-    expect(passwordOk("adalovelace123", "x@y.co", "Ada Lovelace")).toBe(false);
-    expect(passwordRules("x".repeat(129) + "1").find((r) => r.id === "length")?.ok).toBe(false);
-  });
-  test("strength is a hint that grows with satisfied rules", () => {
-    expect(passwordStrength("").score).toBe(0);
-    expect(passwordStrength("abc").score).toBeLessThanOrEqual(2);
-    expect(passwordStrength("correct-horse-42").score).toBeGreaterThanOrEqual(3);
-    expect(passwordStrength("correct-horse-42-battery").label).toBe("Strong");
-  });
-  test("email validation", () => {
-    expect(validEmail("a@b.co")).toBe(true);
-    for (const bad of ["", "a", "a@b", "a b@c.co", "@x.co"]) expect(validEmail(bad)).toBe(false);
-  });
-});
 
 describe("router helpers", () => {
-  test("safeNext only allows same-site paths", () => {
-    expect(safeNext("/app/schemas?x=1")).toBe("/app/schemas?x=1");
-    for (const bad of ["https://evil.example", "//evil.example", "javascript:alert(1)", "/\\evil", "", null, undefined]) {
-      expect(safeNext(bad as string)).toBe("/app/overview");
-    }
-    expect(safeNext("evil", "/x")).toBe("/x");
-  });
   test("normalize strips trailing slashes", () => {
     expect(normalize("/app/")).toBe("/app"); expect(normalize("/")).toBe("/"); expect(normalize("///")).toBe("/");
   });

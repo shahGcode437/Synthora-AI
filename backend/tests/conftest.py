@@ -1,6 +1,7 @@
-"""Shared fixtures for account/persistence tests: an isolated in-memory database per test."""
+"""Shared fixtures: an isolated in-memory database per test, and anonymous workspaces."""
 import json
 import os
+import uuid
 from pathlib import Path
 
 # Tests that touch the database without the `api` fixture must never create a file next to the code.
@@ -10,14 +11,12 @@ import pytest
 from sqlalchemy import create_engine, text
 from fastapi.testclient import TestClient
 
-from app.auth.ratelimit import limiter
 from app.config import get_settings
 from app.config import Settings
 from app.db import configure_engine, get_engine, init_db
 from app.main import app
 
 PLAN_FILE = Path(__file__).parent / "fixtures" / "plan_a.json"
-PASSWORD = "correct-horse-42"
 
 
 @pytest.fixture
@@ -73,38 +72,23 @@ def api(monkeypatch) -> TestClient:
     else:
         configure_engine("sqlite://")
         init_db()
-    limiter.reset()
-    s = get_settings()
-    monkeypatch.setattr(s, "rate_limit_enabled", True)
-    monkeypatch.setattr(s, "auth_required_for_ai", False)
-    monkeypatch.setattr(s, "google_client_id", "test-client-id.apps.googleusercontent.com")
     yield TestClient(app, raise_server_exceptions=False)
     app.dependency_overrides.clear()
-    limiter.reset()
 
 
-def signup(api: TestClient, email: str = "ada@example.com", name: str = "Ada Lovelace", password: str = PASSWORD) -> dict:
-    r = api.post("/api/v1/auth/signup", json={"name": name, "email": email, "password": password})
-    assert r.status_code == 201, r.text
-    api.cookies.clear()  # tests authenticate with explicit bearer headers; cookie behaviour has its own tests
-    return r.json()
-
-
-def auth(token: str) -> dict:
-    return {"Authorization": f"Bearer {token}"}
+def workspace_headers(ws: str | None = None) -> dict:
+    return {"X-Workspace-Id": ws or uuid.uuid4().hex}
 
 
 @pytest.fixture
 def user(api) -> dict:
-    """A signed-in user: {'user': ..., 'token': ..., 'h': auth headers}."""
-    body = signup(api)
-    return {**body, "h": auth(body["token"])}
+    """One anonymous workspace: {'h': headers}. (Named `user` for brevity; there are no accounts.)"""
+    return {"h": workspace_headers()}
 
 
 @pytest.fixture
 def other(api) -> dict:
-    body = signup(api, email="grace@example.com", name="Grace Hopper")
-    return {**body, "h": auth(body["token"])}
+    return {"h": workspace_headers()}
 
 
 @pytest.fixture

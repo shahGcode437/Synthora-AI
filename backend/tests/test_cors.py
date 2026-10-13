@@ -19,7 +19,7 @@ def test_allowed_origins_preflight_and_simple_requests(origin):
     r = preflight(origin)
     assert r.status_code == 200
     assert r.headers["access-control-allow-origin"] == origin        # echoed exactly, never "*"
-    assert r.headers["access-control-allow-credentials"] == "true"
+    assert "access-control-allow-credentials" not in r.headers        # no cookies or logins: credentials are not used
     assert "POST" in r.headers["access-control-allow-methods"]
     h = client.get("/health", headers={"Origin": origin})              # what the "API Online" check does
     assert h.status_code == 200 and h.headers["access-control-allow-origin"] == origin

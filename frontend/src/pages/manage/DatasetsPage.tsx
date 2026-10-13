@@ -1,6 +1,6 @@
 import { Braces, Database, Download, Eye, Network, Table2, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { datasets as api, type DatasetDetail, type DatasetSummary } from "../../api/accounts";
+import { datasets as api, type DatasetDetail, type DatasetSummary } from "../../api/library";
 import { exportData, saveBlob } from "../../api/client";
 import type { ExportFormat } from "../../api/types";
 import { DataGrid } from "../../components/DataGrid";

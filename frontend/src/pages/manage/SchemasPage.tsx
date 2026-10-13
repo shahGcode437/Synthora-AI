@@ -1,6 +1,6 @@
 import { Pencil, PlayCircle, Plus, Shapes, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { schemas as api, type SchemaSummary } from "../../api/accounts";
+import { schemas as api, type SchemaSummary } from "../../api/library";
 import { ConfirmDialog, Dialog } from "../../components/Dialog";
 import { EmptyState, ErrorState, ListSkeleton, PageHeader } from "../../components/page";
 import { useToast } from "../../components/Toast";

@@ -63,7 +63,7 @@ export function SettingsPage() {
       case "general": return (
         <Card>
           <CardHeader title="General" subtitle="Defaults used to pre-fill a new session." />
-          <Row title="Workspace name" hint="Shown in the profile menu."><Input maxLength={40} value={s.workspaceName} onChange={(e) => set({ workspaceName: e.target.value })} /></Row>
+          <Row title="Workspace name" hint="Shown in the dashboard."><Input maxLength={40} value={s.workspaceName} onChange={(e) => set({ workspaceName: e.target.value })} /></Row>
           <Row title="Default locale" hint="Sent as the locale of each request. Auto lets the AI decide.">
             <Select value={s.locale} onChange={(e) => set({ locale: e.target.value })}>
               {LOCALES.filter((l) => l.value !== "__custom").map((l) => <option key={l.value} value={l.value}>{l.label}</option>)}

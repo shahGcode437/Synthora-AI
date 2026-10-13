@@ -5,7 +5,6 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.errors import register_exception_handlers
 from app.api.v1.analyze import router as analyze_router
-from app.api.v1.auth import router as auth_router
 from app.api.v1.datasets import router as datasets_router
 from app.api.v1.export import router as export_router
 from app.api.v1.generate import router as generate_router
@@ -36,7 +35,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origin_list,
-    allow_credentials=True,
+    allow_credentials=False,  # no cookies or logins: nothing ambient to protect
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -46,7 +45,6 @@ app.include_router(analyze_router)
 app.include_router(sample_router)
 app.include_router(generate_router)
 app.include_router(export_router)
-app.include_router(auth_router)
 app.include_router(history_router)
 app.include_router(schemas_router)
 app.include_router(datasets_router)

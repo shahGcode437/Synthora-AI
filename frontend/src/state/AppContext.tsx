@@ -1,11 +1,9 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
-import { auth as authApi } from "../api/accounts";
 import type { SampleControls } from "../api/client";
-import { useAuth } from "../auth/AuthContext";
 import type { AnalyzeRequest, GenerationPlan } from "../api/types";
 import { defaultControls, type Controls } from "../sections/ControlsFields";
 import { useRouter } from "../router";
-import { applyAppearance, defaultSettings, fromServerPrefs, loadSettings, saveSettings, toServerPrefs, type Settings } from "./settings";
+import { applyAppearance, defaultSettings, loadSettings, saveSettings, type Settings } from "./settings";
 import { useHealth, useWorkspace, type HealthState } from "./workspace";
 
 export type EventTone = "success" | "danger" | "warning" | "info";
@@ -29,8 +27,6 @@ interface Ctx {
   newSession: () => void;
   /** Load a saved plan (schema or history run) for review: no AI call. */
   loadPlan: (plan: GenerationPlan, label: string) => void;
-  /** Whether preferences are being saved to the signed-in account. */
-  prefSync: "off" | "idle" | "saving" | "saved" | "error";
 }
 const AppCtx = createContext<Ctx | null>(null);
 export function useApp(): Ctx {
@@ -41,7 +37,6 @@ export function useApp(): Ctx {
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const { go } = useRouter();
-  const { status, user, setUser } = useAuth();
   const ws = useWorkspace();
   const { health, recheck } = useHealth();
   const { state, analyzeFromPrompt, analyzeFromSample, runGenerate, reset } = ws;
@@ -52,38 +47,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const nextId = useRef(1);
 
   useEffect(() => { applyAppearance(settings); saveSettings(settings); }, [settings]);
-
-  // ---- account preferences: the account's saved preferences win on sign-in; edits are saved back (debounced).
-  const [prefSync, setPrefSync] = useState<Ctx["prefSync"]>("off");
-  const syncedUser = useRef<string | null>(null);
-  const lastServer = useRef<string>("");
-  useEffect(() => {
-    if (status !== "authed" || !user) { syncedUser.current = null; setPrefSync("off"); return; }
-    if (syncedUser.current === user.id) return;
-    syncedUser.current = user.id;
-    if (user.preferences && Object.keys(user.preferences).length > 0) {
-      const merged = fromServerPrefs(user.preferences);
-      lastServer.current = JSON.stringify(toServerPrefs(merged));
-      setSettingsState(merged);
-    } else {
-      lastServer.current = ""; // first sign-in on a fresh account: this device's preferences become the account's
-    }
-    setPrefSync("idle");
-  }, [status, user]);
-
-  useEffect(() => {
-    if (status !== "authed" || syncedUser.current === null) return;
-    const payload = toServerPrefs(settings);
-    const json = JSON.stringify(payload);
-    if (json === lastServer.current) return;
-    setPrefSync("saving");
-    const t = setTimeout(() => {
-      authApi.update({ preferences: payload })
-        .then((u) => { lastServer.current = json; setUser(u); setPrefSync("saved"); })
-        .catch(() => setPrefSync("error"));
-    }, 800);
-    return () => clearTimeout(t);
-  }, [settings, status, setUser]);
 
   const push = useCallback((tone: EventTone, title: string, detail?: string) =>
     setEvents((e) => [{ id: nextId.current++, ts: Date.now(), tone, title, detail }, ...e].slice(0, 30)), []);
@@ -121,7 +84,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   return (
     <AppCtx.Provider value={{
       ws, health, recheck, settings, setSettings, resetSettings, draft, patchDraft,
-      events, clearEvents: () => setEvents([]), analyzePrompt, analyzeSample, generate, newSession, loadPlan, prefSync,
+      events, clearEvents: () => setEvents([]), analyzePrompt, analyzeSample, generate, newSession, loadPlan,
     }}>
       {children}
     </AppCtx.Provider>

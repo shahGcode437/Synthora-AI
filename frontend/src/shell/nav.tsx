@@ -4,17 +4,15 @@ import {
 import type { ReactNode } from "react";
 import type { Crumb } from "../components/page";
 
-export interface NavLeaf { key: string; label: string; to: string; icon: ReactNode; auth?: boolean; match?: (path: string) => boolean }
+export interface NavLeaf { key: string; label: string; to: string; icon: ReactNode; match?: (path: string) => boolean }
 export interface NavGroup { title: string; items: NavLeaf[] }
-
-import { ACCOUNTS_ENABLED } from "../auth/config";
 
 const ic = "size-[18px]";
 export const GENERATOR_PATHS = ["input", "analyze", "plan", "generate", "validate", "quality", "export"];
 export const isGeneratorPath = (path: string) => GENERATOR_PATHS.some((s) => path === `/app/${s}`);
 
-/** Every entry maps to a real page. `auth` items are reachable only when signed in (guests are sent to Sign in). */
-const ALL_NAV: NavGroup[] = [
+/** Every entry maps to a real page. */
+export const NAV: NavGroup[] = [
   { title: "Workspace", items: [
     { key: "overview", label: "Overview", to: "/app/overview", icon: <LayoutDashboard className={ic} /> },
     { key: "generator", label: "Data Generator", to: "/app/input", icon: <Sparkles className={ic} />, match: isGeneratorPath },
@@ -23,20 +21,14 @@ const ALL_NAV: NavGroup[] = [
     { key: "documents", label: "Document Data", to: "/app/documents", icon: <Braces className={ic} /> },
   ] },
   { title: "Management", items: [
-    { key: "schemas", label: "Schemas", to: "/app/schemas", icon: <Shapes className={ic} />, auth: true },
-    { key: "datasets", label: "Datasets", to: "/app/datasets", icon: <Database className={ic} />, auth: true },
-    { key: "history", label: "Generation History", to: "/app/history", icon: <History className={ic} />, auth: true },
+    { key: "schemas", label: "Schemas", to: "/app/schemas", icon: <Shapes className={ic} /> },
+    { key: "datasets", label: "Datasets", to: "/app/datasets", icon: <Database className={ic} /> },
+    { key: "history", label: "Generation History", to: "/app/history", icon: <History className={ic} /> },
   ] },
-  { title: "Account", items: [
-    { key: "profile", label: "Profile", to: "/app/profile", icon: <UserRound className={ic} />, auth: true },
+  { title: "Preferences", items: [
     { key: "settings", label: "Settings", to: "/app/settings", icon: <Settings className={ic} /> },
   ] },
 ];
-
-/** Without accounts there is no Overview, Management group or Profile: only pages that work for everyone. */
-export const NAV: NavGroup[] = ACCOUNTS_ENABLED
-  ? ALL_NAV
-  : ALL_NAV.map((g) => ({ ...g, items: g.items.filter((i) => !i.auth && i.key !== "overview") })).filter((g) => g.items.length > 0);
 
 export const isActive = (item: NavLeaf, path: string) => (item.match ? item.match(path) : path === item.to || path.startsWith(`${item.to}/`));
 
@@ -45,7 +37,7 @@ const STEP_LABEL: Record<string, string> = {
 };
 const PAGE_LABEL: Record<string, string> = {
   overview: "Overview", tabular: "Tabular Data", relational: "Relational Data", documents: "Document Data", schemas: "Schemas",
-  datasets: "Datasets", history: "Generation History", profile: "Profile", settings: "Settings", help: "Help", about: "About",
+  datasets: "Datasets", history: "Generation History", settings: "Settings", help: "Help", about: "About",
 };
 
 /** Breadcrumb trail and document title for an /app route, derived from the nav model. */

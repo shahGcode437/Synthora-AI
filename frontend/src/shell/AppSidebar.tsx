@@ -1,6 +1,5 @@
 import { BookOpen, Check, ChevronDown, FileText, Lock, PanelLeftClose, PanelLeftOpen, RotateCcw } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
-import { useAuth } from "../auth/AuthContext";
 import { Tooltip } from "../components/Tooltip";
 import { cn } from "../lib/cn";
 import { Link, useRouter } from "../router";
@@ -18,26 +17,25 @@ export function useSidebarCollapsed(): [boolean, () => void] {
   return [collapsed, toggle];
 }
 
-function ItemShell({ collapsed, active, locked, label, children }: { collapsed: boolean; active: boolean; locked?: boolean; label: string; children: ReactNode }) {
+function ItemShell({ collapsed, active, label, children }: { collapsed: boolean; active: boolean; label: string; children: ReactNode }) {
   return (
     <div className={cn("group relative rounded-lg transition-colors", active ? "bg-accent/10" : "hover:bg-panel-2")}>
       {active && <span className="absolute inset-y-1.5 left-0 w-[3px] rounded-r-full bg-accent" aria-hidden="true" />}
-      <Tooltip label={locked ? `${label} · sign in` : label} disabled={!collapsed} className="block w-full">{children}</Tooltip>
+      <Tooltip label={label} disabled={!collapsed} className="block w-full">{children}</Tooltip>
     </div>
   );
 }
 
-function NavLink({ item, collapsed, onNavigate, locked }: { item: NavLeaf; collapsed: boolean; onNavigate?: () => void; locked: boolean }) {
+function NavLink({ item, collapsed, onNavigate }: { item: NavLeaf; collapsed: boolean; onNavigate?: () => void }) {
   const { path } = useRouter();
   const active = isActive(item, path);
   return (
-    <ItemShell collapsed={collapsed} active={active} locked={locked} label={item.label}>
+    <ItemShell collapsed={collapsed} active={active} label={item.label}>
       <Link to={item.to} onClick={onNavigate} aria-current={active ? "page" : undefined} aria-label={collapsed ? item.label : undefined}
         className={cn("flex w-full items-center gap-3 rounded-lg px-3 py-2 text-[13.5px] font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent/60",
           collapsed && "justify-center px-0", active ? "text-accent-soft" : "text-fg-dim group-hover:text-fg")}>
         <span className={cn("shrink-0", active ? "text-accent" : "text-fg-mute group-hover:text-fg-dim")}>{item.icon}</span>
         {!collapsed && <span className="min-w-0 flex-1 truncate">{item.label}</span>}
-        {!collapsed && locked && <Lock className="size-3.5 shrink-0 text-fg-mute" aria-label="Requires sign in" />}
       </Link>
     </ItemShell>
   );
@@ -105,9 +103,7 @@ export function SidebarNav({ collapsed = false, onNavigate, onToggle, showToggle
   collapsed?: boolean; onNavigate?: () => void; onToggle?: () => void; showToggle?: boolean;
 }) {
   const { newSession, ws } = useApp();
-  const { status } = useAuth();
   const busy = ["analyzing", "generating", "exporting"].includes(ws.state.phase);
-  const guest = status !== "authed";
   const foot = "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-[13px] text-fg-dim outline-none transition-colors hover:bg-panel-2 hover:text-fg focus-visible:ring-2 focus-visible:ring-accent/60";
   return (
     <nav aria-label="Primary" className="flex h-full flex-col justify-between gap-4">
@@ -119,7 +115,7 @@ export function SidebarNav({ collapsed = false, onNavigate, onToggle, showToggle
             <div className="space-y-0.5">
               {g.items.map((it) => it.key === "generator"
                 ? <GeneratorGroup key={it.key} item={it} collapsed={collapsed} onNavigate={onNavigate} />
-                : <NavLink key={it.key} item={it} collapsed={collapsed} onNavigate={onNavigate} locked={!!it.auth && guest} />)}
+                : <NavLink key={it.key} item={it} collapsed={collapsed} onNavigate={onNavigate} />)}
             </div>
           </div>
         ))}

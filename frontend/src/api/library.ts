@@ -1,22 +1,6 @@
-// Account, history, schema and dataset endpoints (see docs/API_CONTRACT.md "Accounts & persistence").
+// History, saved schemas and saved datasets of this browser's anonymous workspace (no account; see docs/DATABASE_SETUP.md).
 import { TIMEOUT, send } from "./client";
 import type { GeneratedData, GenerationPlan } from "./types";
-
-export interface Preferences {
-  workspace_name: string; locale: string; rows: string;
-  edge: "none" | "ai_recommended" | "low" | "medium" | "high" | "custom";
-  privacy: "auto" | "safe_default" | "none" | "custom";
-  seed: string; export_format: "auto" | "csv" | "json" | "zip";
-  theme: "dark" | "light"; density: "comfortable" | "compact"; animations: boolean; depth: "full" | "reduced";
-}
-export interface User {
-  id: string; email: string; name: string; avatar_url: string | null;
-  has_password: boolean; has_google: boolean; email_verified: boolean;
-  created_at: string; last_login_at: string | null; preferences: Partial<Preferences>;
-}
-/** `token` is for API clients only; the browser app ignores it and relies on the HttpOnly cookie plus `csrf_token`. */
-export interface AuthResponse { user: User; token: string; csrf_token: string; expires_at: string }
-export interface SessionInfo { id: string; created_at: string; last_used_at: string; expires_at: string; user_agent: string | null; current: boolean }
 
 export interface RunSummary {
   id: string; created_at: string; source_mode: string; domain: string; data_type: "tabular" | "relational";
@@ -44,28 +28,12 @@ export interface DatasetSummary {
 }
 export interface DatasetDetail extends DatasetSummary { plan: GenerationPlan | null; preview: GeneratedData }
 
-const json = async <T>(p: string, init?: RequestInit): Promise<T> => (await send(p, init ?? {}, TIMEOUT.account)).json();
+const json = async <T>(p: string, init?: RequestInit): Promise<T> => (await send(p, init ?? {}, TIMEOUT.library)).json();
 const body = (method: string, data?: unknown): RequestInit => ({
   method, headers: data === undefined ? undefined : { "Content-Type": "application/json" },
   body: data === undefined ? undefined : JSON.stringify(data),
 });
-const none = async (p: string, init: RequestInit): Promise<void> => { await send(p, init, TIMEOUT.account); };
-
-export const auth = {
-  signup: (d: { name: string; email: string; password: string }) => json<AuthResponse>("/api/v1/auth/signup", body("POST", d)),
-  login: (d: { email: string; password: string }) => json<AuthResponse>("/api/v1/auth/login", body("POST", d)),
-  google: (credential: string) => json<AuthResponse>("/api/v1/auth/google", body("POST", { credential })),
-  logout: () => none("/api/v1/auth/logout", body("POST")),
-  me: () => json<User>("/api/v1/auth/me"),
-  /** Who is signed in plus the CSRF token. Used on load: the cookie is invisible to scripts. */
-  session: () => json<AuthResponse>("/api/v1/auth/session"),
-  update: (d: { name?: string; preferences?: Preferences }) => json<User>("/api/v1/auth/me", body("PATCH", d)),
-  changePassword: (d: { current_password?: string; new_password: string }) => none("/api/v1/auth/change-password", body("POST", d)),
-  sessions: () => json<SessionInfo[]>("/api/v1/auth/sessions"),
-  revokeSession: (id: string) => none(`/api/v1/auth/sessions/${id}`, body("DELETE")),
-  revokeOthers: () => none("/api/v1/auth/sessions", body("DELETE")),
-  deleteAccount: (d: { password?: string; confirm_email?: string }) => none("/api/v1/auth/delete-account", body("POST", d)),
-};
+const none = async (p: string, init: RequestInit): Promise<void> => { await send(p, init, TIMEOUT.library); };
 
 export const history = {
   list: (p: { limit?: number; offset?: number; status?: "all" | "passed" | "failed" } = {}) => {

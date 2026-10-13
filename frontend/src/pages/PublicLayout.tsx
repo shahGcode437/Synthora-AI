@@ -1,12 +1,9 @@
 import type { ReactNode } from "react";
 import { API_BASE } from "../api/client";
-import { useAuth } from "../auth/AuthContext";
-import { ACCOUNTS_ENABLED } from "../auth/config";
 import { Logo } from "../components/Logo";
 import { Link } from "../router";
 
 export function PublicHeader({ landing = false }: { landing?: boolean }) {
-  const { status } = useAuth();
   const nav = "text-sm text-fg-dim transition-colors hover:text-fg";
   return (
     <header className="sticky top-0 z-40 border-b border-line/70 bg-canvas/75 backdrop-blur-md">
@@ -21,14 +18,7 @@ export function PublicHeader({ landing = false }: { landing?: boolean }) {
           {landing && <a href="#types" className={`${nav} hidden lg:inline`}>Data Types</a>}
           {landing && <a href="#capabilities" className={`${nav} hidden lg:inline`}>Features</a>}
           <Link to="/docs" className={nav}>Docs</Link>
-          {!ACCOUNTS_ENABLED
-            ? <Link to="/app/input" className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-canvas transition-colors hover:bg-accent-soft">Start Generating</Link>
-            : status === "authed"
-            ? <Link to="/app/overview" className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-canvas transition-colors hover:bg-accent-soft">Open app</Link>
-            : <>
-                <Link to="/login" className={nav}>Sign In</Link>
-                <Link to="/signup" className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-canvas transition-colors hover:bg-accent-soft">Get Started</Link>
-              </>}
+          <Link to="/app/overview" className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-canvas transition-colors hover:bg-accent-soft">Open Dashboard</Link>
         </nav>
       </div>
     </header>
@@ -44,7 +34,7 @@ export function PublicFooter() {
           <Link to="/docs" className="hover:text-fg">Documentation</Link>
           <a href={`${API_BASE}/docs`} target="_blank" rel="noreferrer" className="hover:text-fg">API</a>
           <Link to="/about" className="hover:text-fg">About</Link>
-          <Link to="/app" className="hover:text-fg">Open the app</Link>
+          <Link to="/app/overview" className="hover:text-fg">Open the dashboard</Link>
         </nav>
       </div>
     </footer>
@@ -70,7 +60,7 @@ export function NotFound() {
         <p className="mt-2 text-fg-mute">Check the address, or head back to the start.</p>
         <div className="mt-6 flex justify-center gap-3">
           <Link to="/" className="rounded-lg border border-line-strong px-4 py-2 text-sm hover:bg-panel-2">Home</Link>
-          <Link to="/app" className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-canvas">Open the app</Link>
+          <Link to="/app/overview" className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-canvas">Open the dashboard</Link>
         </div>
       </div>
     </PublicPage>

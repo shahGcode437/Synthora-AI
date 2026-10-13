@@ -1,6 +1,6 @@
 import { CheckCircle2, History, PlayCircle, Trash2, XCircle } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { history as api, type RunSummary } from "../../api/accounts";
+import { history as api, type RunSummary } from "../../api/library";
 import { ConfirmDialog } from "../../components/Dialog";
 import { EmptyState, ErrorState, ListSkeleton, PageHeader } from "../../components/page";
 import { useToast } from "../../components/Toast";
@@ -54,7 +54,7 @@ export function HistoryPage() {
   return (
     <div className="animate-fade-up">
       <PageHeader crumbs={[{ label: "Management", to: "/app/overview" }, { label: "Generation History" }]} title="Generation history"
-        description="Every generation made while signed in. History keeps the plan and the validation summary, not the generated rows: save a dataset to keep rows."
+        description="Every generation made in this browser's workspace. History keeps the plan and the validation summary, not the generated rows: save a dataset to keep rows."
         actions={total > 0 || status !== "all" ? <Button variant="ghost" className="text-rose-300" icon={<Trash2 className="size-4" />} onClick={() => { setDel("all"); setDelError(null); }}>Clear history</Button> : undefined} />
       <div className="mb-4"><Segmented<Status> value={status} onChange={(v) => { setStatus(v); setOffset(0); }}
         options={[{ value: "all", label: "All" }, { value: "passed", label: "Passed" }, { value: "failed", label: "Failed" }]} /></div>
@@ -62,7 +62,7 @@ export function HistoryPage() {
       {loading && items.length === 0 ? <ListSkeleton /> : error ? <ErrorState message={error} onRetry={load} />
         : items.length === 0 ? (
           <EmptyState icon={<History className="size-5" />} title={status === "all" ? "No generations yet" : `No ${status} runs`}>
-            {status === "all" ? "Runs you generate while signed in will appear here." : "Try another filter."}
+            {status === "all" ? "Runs you generate will appear here." : "Try another filter."}
           </EmptyState>
         ) : (
           <>

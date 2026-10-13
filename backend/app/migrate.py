@@ -33,11 +33,11 @@ class LegacyDatabase(SchemaNotReady):
 
 def _check_not_legacy(conn) -> None:
     names = set(inspect(conn).get_table_names())
-    if "alembic_version" not in names and names & {"users", "auth_sessions", "saved_schemas"}:
+    if "alembic_version" not in names and names & {"users", "auth_sessions", "saved_schemas", "saved_datasets", "generation_runs"}:
         raise LegacyDatabase(
-            "This database has application tables but no migration history (it was created before migrations "
-            "existed). It has NOT been touched. If it only holds disposable data, delete it; otherwise copy its data "
-            "into a fresh database with `python -m scripts.migrate_sqlite_to_postgres` (see docs/AUTH_SETUP.md)."
+            "This database was created by an earlier version (it has no migration history). It has NOT been touched. "
+            "If its data is disposable, delete the file; otherwise keep it as a backup and point DATABASE_URL at a new "
+            "database (see docs/DATABASE_SETUP.md)."
         )
 
 

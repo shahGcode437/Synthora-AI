@@ -1,7 +1,6 @@
 import { ArrowRight, Bot, Braces, Check, Database, FileArchive, FileInput, FileSpreadsheet, FileText, GitBranch, Layers, Network, Quote, Scale, ScanSearch, ShieldCheck, Sparkles, Table2 } from "lucide-react";
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { cn } from "../lib/cn";
-import { ACCOUNTS_ENABLED } from "../auth/config";
 import { Link } from "../router";
 import { SceneLoader } from "../three/SceneLoader";
 import { PublicFooter, PublicHeader } from "./PublicLayout";
@@ -258,8 +257,8 @@ export function Landing() {
             Design, generate, validate and export realistic tabular, relational and document data from a single workspace, with integrity checks you can see and a plan you approve first.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link to="/app/input" className="group inline-flex items-center gap-2 rounded-xl bg-accent px-6 py-3 font-semibold text-canvas shadow-[0_10px_40px_-10px_var(--color-accent)] transition hover:bg-accent-soft">
-              Start Generating <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+            <Link to="/app/overview" className="group inline-flex items-center gap-2 rounded-xl bg-accent px-6 py-3 font-semibold text-canvas shadow-[0_10px_40px_-10px_var(--color-accent)] transition hover:bg-accent-soft">
+              Open Dashboard <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
             </Link>
             <a href="#showcase" className="rounded-xl border border-line-strong px-6 py-3 font-semibold text-fg transition-colors hover:bg-panel-2">See it in action</a>
           </div>
@@ -344,14 +343,7 @@ export function Landing() {
           <FileInput className="relative mx-auto mb-4 size-7 text-accent" /><ScanSearch className="hidden" />
           <h2 className="relative text-3xl font-semibold tracking-tight sm:text-4xl">Generate your first dataset.</h2>
           <p className="relative mx-auto mt-3 max-w-md text-fg-dim">Describe it or upload a sample. You review the plan before anything is generated.</p>
-          {ACCOUNTS_ENABLED ? (
-            <>
-              <Link to="/signup" className="relative mt-7 inline-flex items-center gap-2 rounded-xl bg-accent px-7 py-3 font-semibold text-canvas transition hover:bg-accent-soft">Create a free account <ArrowRight className="size-4" /></Link>
-              <p className="relative mt-3 text-xs text-fg-mute">Or <Link to="/app/input" className="text-accent underline">try the generator without an account</Link>.</p>
-            </>
-          ) : (
-            <Link to="/app/input" className="relative mt-7 inline-flex items-center gap-2 rounded-xl bg-accent px-7 py-3 font-semibold text-canvas transition hover:bg-accent-soft">Start Generating <ArrowRight className="size-4" /></Link>
-          )}
+          <Link to="/app/overview" className="relative mt-7 inline-flex items-center gap-2 rounded-xl bg-accent px-7 py-3 font-semibold text-canvas transition hover:bg-accent-soft">Open Dashboard <ArrowRight className="size-4" /></Link>
         </div>
       </section>
       <PublicFooter />

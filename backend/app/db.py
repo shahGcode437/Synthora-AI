@@ -1,6 +1,6 @@
 """Database layer (SQLAlchemy 2). PostgreSQL in production, SQLite for local dev and fast tests.
 
-The schema is owned by Alembic (`backend/migrations`): see `app/migrate.py` and docs/AUTH_SETUP.md.
+The schema is owned by Alembic (`backend/migrations`): see `app/migrate.py` and docs/DATABASE_SETUP.md.
 Nothing here creates tables.
 """
 from __future__ import annotations

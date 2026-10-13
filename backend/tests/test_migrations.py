@@ -13,7 +13,7 @@ from app.db import Base
 from app.main import app
 from app.migrate import SchemaNotReady, current_revision, downgrade, ensure_schema, head_revision, upgrade
 
-TABLES = {"users", "auth_sessions", "generation_runs", "saved_schemas", "saved_datasets", "rate_limit_events"}
+TABLES = {"generation_runs", "saved_schemas", "saved_datasets"}
 
 
 @pytest.fixture
@@ -40,12 +40,12 @@ def test_upgrade_from_empty_creates_every_table_at_head(empty_engine):
 def test_upgrade_is_repeatable(empty_engine):
     upgrade(empty_engine)
     with empty_engine.begin() as c:
-        c.execute(text("INSERT INTO users (id,email,name,email_verified,preferences,created_at) "
-                       "VALUES ('u1','a@b.co','A',false,'{}',CURRENT_TIMESTAMP)"))
+        c.execute(text("INSERT INTO saved_schemas (id,workspace_id,name,plan,created_at,updated_at) "
+                       "VALUES ('s1','w1','n','{}',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)"))
     upgrade(empty_engine)   # a second deploy must be a no-op and must not touch data
     upgrade(empty_engine)
     with empty_engine.connect() as c:
-        assert c.execute(text("SELECT count(*) FROM users")).scalar() == 1
+        assert c.execute(text("SELECT count(*) FROM saved_schemas")).scalar() == 1
     assert current_revision(empty_engine) == head_revision()
 
 
@@ -57,14 +57,12 @@ def test_migrated_schema_matches_the_models(empty_engine):
     assert diff == [], f"models and migrations disagree: {diff}"
 
 
-def test_constraints_and_indexes_exist(empty_engine):
+def test_indexes_exist_for_workspace_lookups(empty_engine):
     upgrade(empty_engine)
     insp = inspect(empty_engine)
-    assert {tuple(i["column_names"]) for i in insp.get_indexes("users") if i["unique"]} >= {("email",)}
-    assert any(i["unique"] and i["column_names"] == ["token_hash"] for i in insp.get_indexes("auth_sessions"))
-    for t in ("auth_sessions", "generation_runs", "saved_schemas", "saved_datasets"):
-        fks = insp.get_foreign_keys(t)
-        assert fks and fks[0]["referred_table"] == "users" and fks[0]["options"].get("ondelete") == "CASCADE", t
+    for t in ("generation_runs", "saved_schemas", "saved_datasets"):
+        assert any(i["column_names"][:1] == ["workspace_id"] for i in insp.get_indexes(t)), t
+    assert "users" not in insp.get_table_names()  # accounts were removed
 
 
 def test_downgrade_then_upgrade_round_trips(empty_engine):
@@ -73,18 +71,6 @@ def test_downgrade_then_upgrade_round_trips(empty_engine):
     assert not (TABLES & set(inspect(empty_engine).get_table_names()))
     upgrade(empty_engine)
     assert TABLES <= set(inspect(empty_engine).get_table_names())
-
-
-def test_database_foreign_keys_cascade(empty_engine):
-    upgrade(empty_engine)
-    with empty_engine.begin() as c:
-        c.execute(text("PRAGMA foreign_keys=ON")) if empty_engine.dialect.name == "sqlite" else None
-        c.execute(text("INSERT INTO users (id,email,name,email_verified,preferences,created_at) "
-                       "VALUES ('u1','a@b.co','A',false,'{}',CURRENT_TIMESTAMP)"))
-        c.execute(text("INSERT INTO saved_schemas (id,user_id,name,plan,created_at,updated_at) "
-                       "VALUES ('s1','u1','n','{}',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)"))
-        c.execute(text("DELETE FROM users WHERE id='u1'"))
-        assert c.execute(text("SELECT count(*) FROM saved_schemas")).scalar() == 0
 
 
 def test_ensure_schema_refuses_an_unmigrated_database(empty_engine):
@@ -101,9 +87,8 @@ def test_app_starts_against_an_empty_database_and_restarts_cleanly(swap_engine, 
         swap_engine.use()
         with TestClient(app) as client:
             assert client.get("/health").json()["status"] == "ok"
-            r = client.post("/api/v1/auth/signup", json={"name": "Ada Lovelace", "email": "boot@example.com",
-                                                          "password": "correct-horse-42"})
-            assert r.status_code in (201, 409)
+            r = client.get("/api/v1/schemas", headers={"X-Workspace-Id": "a" * 32})
+            assert r.status_code == 200 and r.json() == []
     assert current_revision(swap_engine) == head_revision()
 
 

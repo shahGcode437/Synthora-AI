@@ -1,9 +1,5 @@
 {
-  "rewrites": [
-    { "source": "/api/:path*", "destination": "https://synthora-ai-9ecc.onrender.com/api/:path*" },
-    { "source": "/health", "destination": "https://synthora-ai-9ecc.onrender.com/health" },
-    { "source": "/((?!api/|health$).*)", "destination": "/index.html" }
-  ],
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
   "headers": [
     {
       "source": "/(.*)",

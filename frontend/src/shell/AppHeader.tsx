@@ -5,7 +5,7 @@ import { cn } from "../lib/cn";
 import { fmtMs } from "../lib/format";
 import { Link, useRouter } from "../router";
 import { useApp } from "../state/AppContext";
-import { NotificationBell, ThemeToggle, UserMenu } from "./HeaderMenus";
+import { NotificationBell, ThemeToggle, ShortcutsButton } from "./HeaderMenus";
 import { routeMeta } from "./nav";
 
 export function ApiStatus() {
@@ -67,7 +67,7 @@ export function AppHeader({ onMenu, onShortcuts, onToggleSidebar, sidebarCollaps
           <ApiStatus />
           <NotificationBell />
           <ThemeToggle />
-          <UserMenu onShortcuts={onShortcuts} />
+          <ShortcutsButton onShortcuts={onShortcuts} />
         </div>
       </div>
     </header>

@@ -21,17 +21,18 @@ test("landing renders and CTA opens the app", async () => {
   expect(await screen.findByText("Why Synthetic Data?")).toBeTruthy();
   expect(screen.getByText(/Turn schemas into shippable datasets/)).toBeTruthy();
   expect(screen.getAllByText(/soon/i).length).toBeGreaterThan(0);
-  await act(async () => { fireEvent.click(screen.getAllByText("Start Generating")[0]); });
-  expect(window.location.pathname).toBe("/app/input");
-  expect(await screen.findByText("What data do you need?")).toBeTruthy();
+  await act(async () => { fireEvent.click(screen.getAllByText("Open Dashboard")[0]); });
+  expect(window.location.pathname).toBe("/app/overview");
+  expect((await screen.findAllByText("Overview")).length).toBeGreaterThan(0);
 });
 
-test("landing nav points only at real routes and the showcase tabs switch", async () => {
+test("landing nav points only at real routes, has no sign in or sign up, and the showcase tabs switch", async () => {
+  await go("/welcome");
   render(<App />);
   await screen.findByText("Why Synthetic Data?");
   const nav = screen.getByRole("navigation", { name: "Main" });
-  expect(within(nav).getByText("Sign In").getAttribute("href")).toBe("/login");
-  expect(within(nav).getByText("Get Started").getAttribute("href")).toBe("/signup");
+  expect(within(nav).getByText("Open Dashboard").getAttribute("href")).toBe("/app/overview");
+  expect(screen.queryByText(/sign in|sign up|log in|create account/i)).toBeNull();
   await act(async () => { fireEvent.click(screen.getByRole("tab", { name: "Document" })); });
   expect(screen.getByRole("tabpanel").textContent).toContain("orders");
 });

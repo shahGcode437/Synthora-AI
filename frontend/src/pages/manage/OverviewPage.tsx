@@ -1,7 +1,6 @@
 import { Database, History, PlayCircle, Shapes, Sparkles } from "lucide-react";
-import { history as api } from "../../api/accounts";
-import { useAuth } from "../../auth/AuthContext";
-import { EmptyState, ErrorState, PageHeader } from "../../components/page";
+import { history as api } from "../../api/library";
+import { ErrorState, PageHeader } from "../../components/page";
 import { Badge, Button, Callout, Card, CardHeader, Skeleton, StatCard } from "../../components/ui";
 import { fmtInt } from "../../lib/format";
 import { useAsync } from "../../lib/useAsync";
@@ -11,17 +10,15 @@ import { useApp } from "../../state/AppContext";
 const when = (iso: string) => new Date(iso).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
 
 export function OverviewPage() {
-  const { status, user } = useAuth();
   const { go } = useRouter();
   const { ws } = useApp();
-  const authed = status === "authed";
-  const ov = useAsync(() => api.overview(), [authed], authed);
+  const ov = useAsync(() => api.overview(), []);
   const hasSession = !!ws.state.plan || !!ws.state.result;
 
   return (
     <div className="animate-fade-up">
-      <PageHeader eyebrow="Workspace" title={user ? `Hello, ${user.name.split(" ")[0]}` : "Overview"}
-        description={authed ? "Your activity, taken from your saved account data." : "Generate data right away. Sign in to keep history, schemas and datasets."}
+      <PageHeader eyebrow="Workspace" title="Overview"
+        description="Your activity in this browser's workspace: generations, saved schemas and saved datasets."
         actions={<Button variant="primary" icon={<Sparkles className="size-4" />} onClick={() => go("/app/input")}>{hasSession ? "Continue generating" : "New generation"}</Button>} />
 
       {hasSession && (
@@ -32,12 +29,7 @@ export function OverviewPage() {
       )}
 
       <div className="mt-5">
-        {!authed ? (
-          <EmptyState icon={<History className="size-5" />} title="Sign in to see your activity"
-            action={<><Link to="/login?next=/app/overview" className="inline-flex h-9 items-center rounded-lg bg-accent px-4 text-sm font-semibold text-canvas">Sign in</Link><Link to="/signup" className="inline-flex h-9 items-center rounded-lg border border-line-strong px-4 text-sm text-fg">Create account</Link></>}>
-            Generation history, saved schemas and datasets are stored per account. The generator works without one.
-          </EmptyState>
-        ) : ov.loading && !ov.data ? (
+        {ov.loading && !ov.data ? (
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">{[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-24" />)}</div>
         ) : ov.error ? <ErrorState message={ov.error} onRetry={ov.reload} />
           : ov.data && (

@@ -3,10 +3,8 @@ import io
 from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 
-from app.auth.deps import ai_user
 from app.exports.exporter import export_data
 from app.models.api import ErrorResponse
-from app.models.db import User
 from app.models.export import ExportRequest
 
 router = APIRouter(prefix="/api/v1", tags=["export"])
@@ -20,7 +18,7 @@ router = APIRouter(prefix="/api/v1", tags=["export"])
         422: {"model": ErrorResponse, "description": "Invalid export request"},
     },
 )
-def export_endpoint(req: ExportRequest, _user: User | None = Depends(ai_user)) -> StreamingResponse:
+def export_endpoint(req: ExportRequest) -> StreamingResponse:
     """Turn already-generated data into a downloadable CSV, JSON or ZIP (built in memory)."""
     f = export_data(req.data, req.format, req.filename, req.include_json)
     return StreamingResponse(

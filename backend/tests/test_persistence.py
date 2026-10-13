@@ -5,7 +5,7 @@ import pytest
 
 from app.config import get_settings
 
-from tests.conftest import auth
+from tests.conftest import workspace_headers
 
 H = "/api/v1/history"
 
@@ -15,7 +15,7 @@ def gen(api, plan, headers=None, **kw):
 
 
 # ------------------------------------------------------------------ history
-def test_only_signed_in_generations_are_recorded(api, user, plan):
+def test_only_generations_with_a_workspace_are_recorded(api, user, plan):
     assert gen(api, plan, seed=1).status_code == 200                       # anonymous: not recorded
     assert gen(api, plan, user["h"], seed=7).status_code == 200
     page = api.get(H, headers=user["h"]).json()
@@ -86,8 +86,8 @@ def test_history_delete_and_clear(api, user, plan):
     assert api.get(H, headers=user["h"]).json()["total"] == 0
 
 
-def test_history_is_capped_per_user(api, user, plan, monkeypatch):
-    monkeypatch.setattr(get_settings(), "max_history_per_user", 3)
+def test_history_is_capped_per_workspace(api, user, plan, monkeypatch):
+    monkeypatch.setattr(get_settings(), "max_history_per_workspace", 3)
     for i in range(6):
         gen(api, plan, user["h"], seed=i)
     page = api.get(H, headers=user["h"]).json()
@@ -159,7 +159,7 @@ def test_schema_validation_and_limit(api, user, plan, monkeypatch):
     assert api.post("/api/v1/schemas", json={"name": "S", "plan": bad}, headers=h).status_code == 422
     assert api.post("/api/v1/schemas", json={"name": "", "plan": plan}, headers=h).status_code == 422
     assert api.post("/api/v1/schemas", json={"name": "S"}, headers=h).status_code == 422
-    monkeypatch.setattr(get_settings(), "max_schemas_per_user", 2)
+    monkeypatch.setattr(get_settings(), "max_schemas_per_workspace", 2)
     assert api.post("/api/v1/schemas", json={"name": "1", "plan": plan}, headers=h).status_code == 201
     assert api.post("/api/v1/schemas", json={"name": "2", "plan": plan}, headers=h).status_code == 201
     r = api.post("/api/v1/schemas", json={"name": "3", "plan": plan}, headers=h)
@@ -213,45 +213,57 @@ def test_dataset_size_and_count_limits(api, user, monkeypatch):
     r = api.post("/api/v1/datasets", json={"name": "Big", "data": {"t": [{"a": "x" * 50}] * 100}}, headers=h)
     assert r.status_code == 413 and r.json()["error"]["code"] == "dataset_too_large"
     monkeypatch.setattr(get_settings(), "max_dataset_bytes", 1_000_000)
-    monkeypatch.setattr(get_settings(), "max_datasets_per_user", 1)
+    monkeypatch.setattr(get_settings(), "max_datasets_per_workspace", 1)
     assert api.post("/api/v1/datasets", json={"name": "A", "data": {"t": [{"a": 1}]}}, headers=h).status_code == 201
     r = api.post("/api/v1/datasets", json={"name": "B", "data": {"t": [{"a": 1}]}}, headers=h)
     assert r.status_code == 409 and r.json()["error"]["code"] == "limit_reached"
 
 
-# ------------------------------------------------------------------ authentication & tenant isolation
-ENDPOINTS = [("get", "/api/v1/history"), ("get", "/api/v1/overview"), ("get", "/api/v1/schemas"),
-             ("get", "/api/v1/datasets"), ("delete", "/api/v1/history"), ("get", "/api/v1/auth/sessions")]
+# ------------------------------------------------------------------ anonymous workspaces & isolation
+PRIVATE = [("get", "/api/v1/history"), ("get", "/api/v1/overview"), ("get", "/api/v1/schemas"),
+           ("get", "/api/v1/datasets"), ("delete", "/api/v1/history")]
 
 
-@pytest.mark.parametrize("method,path", ENDPOINTS)
-def test_management_endpoints_reject_anonymous_callers(api, method, path):
+@pytest.mark.parametrize("method,path", PRIVATE)
+def test_saved_work_endpoints_need_a_workspace_id(api, method, path):
     r = getattr(api, method)(path)
-    assert r.status_code == 401 and r.json()["error"]["code"] == "not_authenticated"
+    assert r.status_code == 400 and r.json()["error"]["code"] == "workspace_required"
 
 
-def test_users_cannot_see_or_modify_each_others_data(api, user, other, plan):
+@pytest.mark.parametrize("bad", ["x", "g" * 32, "0" * 31, "0" * 33, "../../etc"])
+def test_malformed_workspace_ids_are_rejected(api, bad):
+    r = api.get("/api/v1/history", headers={"X-Workspace-Id": bad})
+    assert r.status_code == 400 and r.json()["error"]["code"] in ("invalid_workspace", "workspace_required")
+
+
+def test_the_generator_works_with_no_workspace_and_records_nothing(api, plan):
+    assert api.post("/api/v1/generate", json={"plan": plan, "seed": 1}).status_code == 200
+    assert api.get(H, headers=workspace_headers()).json()["total"] == 0
+
+
+def test_workspaces_cannot_see_or_modify_each_others_data(api, user, other, plan):
     a, b = user["h"], other["h"]
+    sid = api.post("/api/v1/schemas", json={"name": "Mine", "plan": plan}, headers=a).json()["id"]
+    did = api.post("/api/v1/datasets", json={"name": "D", "data": DATA}, headers=a).json()["id"]
     gen(api, plan, a, seed=1)
-    run_id = api.get(H, headers=a).json()["items"][0]["id"]
-    schema_id = api.post("/api/v1/schemas", json={"name": "Private", "plan": plan}, headers=a).json()["id"]
-    ds_id = api.post("/api/v1/datasets", json={"name": "Private", "data": DATA}, headers=a).json()["id"]
+    rid = api.get(H, headers=a).json()["items"][0]["id"]
 
+    assert api.get("/api/v1/schemas", headers=b).json() == []
+    assert api.get("/api/v1/datasets", headers=b).json() == []
     assert api.get(H, headers=b).json()["total"] == 0
-    assert api.get("/api/v1/schemas", headers=b).json() == [] and api.get("/api/v1/datasets", headers=b).json() == []
-    for method, path in [("get", f"{H}/{run_id}"), ("delete", f"{H}/{run_id}"),
-                         ("get", f"/api/v1/schemas/{schema_id}"), ("delete", f"/api/v1/schemas/{schema_id}"),
-                         ("get", f"/api/v1/datasets/{ds_id}"), ("get", f"/api/v1/datasets/{ds_id}/data"),
-                         ("delete", f"/api/v1/datasets/{ds_id}")]:
-        r = getattr(api, method)(path, headers=b)
-        assert r.status_code == 404, (method, path)      # 404, not 403: existence is not revealed
-    assert api.put(f"/api/v1/schemas/{schema_id}", json={"name": "Hijacked"}, headers=b).status_code == 404
-    # nothing changed for the owner
-    assert api.get(f"/api/v1/schemas/{schema_id}", headers=a).json()["name"] == "Private"
-    assert api.get(f"/api/v1/datasets/{ds_id}/data", headers=a).status_code == 200
+    for method, url in [("get", f"/api/v1/schemas/{sid}"), ("put", f"/api/v1/schemas/{sid}"), ("delete", f"/api/v1/schemas/{sid}"),
+                        ("get", f"/api/v1/datasets/{did}"), ("get", f"/api/v1/datasets/{did}/data"), ("delete", f"/api/v1/datasets/{did}"),
+                        ("get", f"{H}/{rid}"), ("delete", f"{H}/{rid}")]:
+        kw = {"json": {"name": "Hijack"}} if method == "put" else {}
+        r = getattr(api, method)(url, headers=b, **kw)
+        assert r.status_code == 404, (method, url, r.status_code)
+    api.delete(H, headers=b)  # clearing another workspace's history must not touch mine
+    assert api.get(H, headers=a).json()["total"] == 1
+    assert api.get(f"/api/v1/schemas/{sid}", headers=a).json()["name"] == "Mine"
     assert api.get("/api/v1/overview", headers=b).json()["generations"] == 0
 
 
-def test_a_token_from_another_deployment_or_forged_token_is_rejected(api, user):
-    assert api.get("/api/v1/overview", headers=auth("A" * 43)).status_code == 401
-    assert api.get("/api/v1/overview", headers={"Authorization": "Bearer "}).status_code == 401
+def test_work_survives_across_requests_for_the_same_workspace(api, plan):
+    h = workspace_headers()
+    api.post("/api/v1/schemas", json={"name": "Keep", "plan": plan}, headers=h)
+    assert [s["name"] for s in api.get("/api/v1/schemas", headers=dict(h)).json()] == ["Keep"]

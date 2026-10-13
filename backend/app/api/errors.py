@@ -7,7 +7,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import DBAPIError, IntegrityError, OperationalError, TimeoutError as PoolTimeout
 
-from app.auth.errors import ApiError
+from app.errors import ApiError
 from app.ai.errors import AllProvidersFailedError, ProviderNotConfiguredError
 from app.exports.exporter import ExportError
 from app.generation.context import GenerationError

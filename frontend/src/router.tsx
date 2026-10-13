@@ -47,9 +47,3 @@ export function Redirect({ to }: { to: string }) {
   useEffect(() => go(to, true), [go, to]);
   return null;
 }
-
-/** Only same-site relative paths are accepted as a post-login destination (prevents open redirects). */
-export function safeNext(next: string | null | undefined, fallback = "/app/overview"): string {
-  if (!next || !next.startsWith("/") || next.startsWith("//") || next.includes("\\")) return fallback;
-  return next;
-}
