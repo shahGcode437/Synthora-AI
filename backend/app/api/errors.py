@@ -5,7 +5,9 @@ from fastapi import FastAPI, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from sqlalchemy.exc import DBAPIError, IntegrityError, OperationalError, TimeoutError as PoolTimeout
 
+from app.auth.errors import ApiError
 from app.ai.errors import AllProvidersFailedError, ProviderNotConfiguredError
 from app.exports.exporter import ExportError
 from app.generation.context import GenerationError
@@ -55,6 +57,31 @@ def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(GenerationError)
     async def _generation(_: Request, exc: GenerationError):
         return _resp(422, "generation_error", str(exc))
+
+    @app.exception_handler(ApiError)
+    async def _api_error(_: Request, exc: ApiError):
+        resp = _resp(exc.status, exc.code, exc.message, exc.details)
+        resp.headers.update(exc.headers)
+        return resp
+
+    @app.exception_handler(OperationalError)
+    @app.exception_handler(PoolTimeout)
+    async def _db_down(_: Request, exc: Exception):
+        # Log only the exception type: driver messages can contain connection details.
+        logger.error("Database unavailable (%s)", type(exc).__name__)
+        resp = _resp(503, "database_unavailable", "The database is temporarily unavailable. Please try again shortly.")
+        resp.headers["Retry-After"] = "5"
+        return resp
+
+    @app.exception_handler(IntegrityError)
+    async def _integrity(_: Request, exc: IntegrityError):
+        logger.warning("Integrity error (%s)", type(exc.orig).__name__)
+        return _resp(409, "conflict", "That change conflicts with existing data.")
+
+    @app.exception_handler(DBAPIError)
+    async def _dbapi(_: Request, exc: DBAPIError):
+        logger.error("Database error (%s)", type(exc.orig).__name__)
+        return _resp(503 if exc.connection_invalidated else 500, "database_error", "A database error occurred.")
 
     @app.exception_handler(Exception)
     async def _unhandled(_: Request, exc: Exception):

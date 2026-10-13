@@ -30,3 +30,7 @@ demo_output/
 
 # public, non-secret build-time API URL for the deployed frontend
 !frontend/.env.production
+
+# local database
+*.db
+*.db-journal

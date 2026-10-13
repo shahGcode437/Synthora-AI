@@ -4,8 +4,10 @@ from fastapi import APIRouter, Depends, File, Form, UploadFile
 from pydantic import ValidationError
 
 from app.ai.router import LLMRouter
+from app.auth.deps import ai_user
 from app.api.deps import get_llm_router
 from app.models.api import MAX_TARGET_ROWS, AnalyzeRequest, ErrorResponse, SampleAnalyzeResponse
+from app.models.db import User
 from app.profiling.csv_parser import MAX_BYTES, SampleInputError
 from app.services.sample import analyze_sample
 
@@ -31,6 +33,7 @@ async def analyze_sample_endpoint(
     privacy_mode: Literal["auto", "safe_default", "none", "custom"] = Form(default="auto"),
     seed: int | None = Form(default=None),
     llm: LLMRouter = Depends(get_llm_router),
+    _user: User | None = Depends(ai_user),
 ) -> SampleAnalyzeResponse:
     """Profile an uploaded CSV locally, then have the AI interpret it into a Generation Plan."""
     try:

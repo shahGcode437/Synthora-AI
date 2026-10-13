@@ -304,6 +304,16 @@ export async function parseApiError(res: Response): Promise<ApiError> {
 
 ---
 
+## 6b. Accounts and persistence (summary)
+
+The generator endpoints above stay public. Account, history, schema and dataset endpoints are documented in
+[AUTH_SETUP.md](AUTH_SETUP.md). Authentication is either an **HttpOnly session cookie** (browsers) or
+`Authorization: Bearer <token>` (API clients). Cookie-authenticated writes must also send `X-CSRF-Token` (the
+`csrf_token` returned by `signup`, `login`, `google` and `GET /api/v1/auth/session`); a missing or wrong token
+returns `403 csrf_failed`. Extra error codes: `not_authenticated` (401), `invalid_credentials`, `weak_password`,
+`email_taken`, `csrf_failed`, `rate_limited` (429 + `Retry-After`), `conflict` (409), `database_unavailable`
+(503 + `Retry-After`).
+
 ## 7. Frontend flow
 
 **Prompt flow**
