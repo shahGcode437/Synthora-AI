@@ -1,81 +1,89 @@
-import { useEffect, useRef } from "react";
-import { Header } from "./components/Header";
-import { Sidebar } from "./components/Sidebar";
-import { AnalyzeSection } from "./sections/AnalyzeSection";
-import { ErrorPanel } from "./sections/ErrorPanel";
-import { ExportSection } from "./sections/ExportSection";
-import { GeneratedSection, GeneratingCard } from "./sections/GeneratedSection";
-import { InputSection } from "./sections/InputSection";
-import { PlanSection } from "./sections/PlanSection";
-import { QualitySection } from "./sections/QualitySection";
-import { ValidationSection } from "./sections/ValidationSection";
-import { useHealth, useWorkspace, type Phase } from "./state/workspace";
+import { lazy, Suspense, useEffect, type ReactNode } from "react";
+import { AuthProvider, PUBLIC_APP_PATHS, useAuth } from "./auth/AuthContext";
+import { ToastProvider } from "./components/Toast";
+import { Spinner } from "./components/ui";
+import { LoginPage, SignupPage } from "./pages/AuthPages";
+import { AboutContent } from "./pages/AboutPage";
+import { HelpContent } from "./pages/HelpPage";
+import { DatasetsPage } from "./pages/manage/DatasetsPage";
+import { HistoryPage } from "./pages/manage/HistoryPage";
+import { OverviewPage } from "./pages/manage/OverviewPage";
+import { ProfilePage } from "./pages/manage/ProfilePage";
+import { SchemasPage } from "./pages/manage/SchemasPage";
+import { NotFound, PublicPage } from "./pages/PublicLayout";
+import { WorkspaceRoute } from "./pages/Workspaces";
+import { DocumentsPage } from "./pages/data/DocumentsPage";
+import { RelationalPage } from "./pages/data/RelationalPage";
+import { TabularPage } from "./pages/data/TabularPage";
+import { Redirect, Router, useRouter } from "./router";
+import { AppShell } from "./shell/AppShell";
+import { AppProvider } from "./state/AppContext";
 
-function scrollTo(id: string) {
-  // let the new section mount first
-  setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+// The landing page is the heaviest public asset and is not needed inside the app, so it loads on demand.
+const Landing = lazy(() => import("./pages/Landing").then((m) => ({ default: m.Landing })));
+
+const TITLES: Record<string, string> = {
+  overview: "Overview", input: "Input", analyze: "Analyze", plan: "Generation Plan", generate: "Generate", validate: "Validate", quality: "Quality & Fidelity",
+  export: "Export", tabular: "Tabular Data", relational: "Relational Data", documents: "Document Data", schemas: "Schemas", datasets: "Datasets",
+  history: "Generation History", profile: "Profile", settings: "Settings", help: "Help", about: "About",
+};
+
+const Loading = () => <div className="grid min-h-screen place-items-center"><Spinner /></div>;
+
+/** Account-only pages send guests to sign in, and bring them back afterwards. */
+function RequireAuth({ path, children }: { path: string; children: ReactNode }) {
+  const { status } = useAuth();
+  if (PUBLIC_APP_PATHS.has(path)) return <>{children}</>;
+  if (status === "loading") return <Loading />;
+  if (status === "guest") return <Redirect to={`/login?next=${encodeURIComponent(path)}`} />;
+  return <>{children}</>;
+}
+
+function AppPage({ name }: { name: string }) {
+  switch (name) {
+    case "overview": return <OverviewPage />;
+    case "tabular": return <TabularPage />;
+    case "relational": return <RelationalPage />;
+    case "documents": return <DocumentsPage />;
+    case "schemas": return <SchemasPage />;
+    case "datasets": return <DatasetsPage />;
+    case "history": return <HistoryPage />;
+    case "profile": return <ProfilePage />;
+    default: return <WorkspaceRoute name={name} />;
+  }
+}
+
+function Routes() {
+  const { path } = useRouter();
+  useEffect(() => {
+    const sub = path.startsWith("/app/") ? TITLES[path.slice(5)] : undefined;
+    document.title = sub ? `${sub} · Synthora AI`
+      : path === "/about" ? "About · Synthora AI" : path === "/docs" ? "Documentation · Synthora AI"
+      : path === "/login" ? "Sign in · Synthora AI" : path === "/signup" ? "Create account · Synthora AI" : "Synthora AI — Synthetic Data Platform";
+  }, [path]);
+
+  if (path === "/") return <Suspense fallback={<Loading />}><Landing /></Suspense>;
+  if (path === "/about") return <PublicPage><AboutContent /></PublicPage>;
+  if (path === "/docs") return <PublicPage><HelpContent pub /></PublicPage>;
+  if (path === "/login") return <LoginPage />;
+  if (path === "/signup") return <SignupPage />;
+  if (path === "/app") return <Redirect to="/app/overview" />;
+  if (path.startsWith("/app/")) {
+    return <RequireAuth path={path}><AppShell><AppPage name={path.slice(5)} /></AppShell></RequireAuth>;
+  }
+  return <NotFound />;
 }
 
 export default function App() {
-  const ws = useWorkspace();
-  const { health, recheck } = useHealth();
-  const { state } = ws;
-  const offline = health.status === "offline";
-  const busy = (["analyzing", "generating", "exporting"] as Phase[]).includes(state.phase);
-
-  // Guide the user to the next step as the workflow advances.
-  const prev = useRef<Phase>("idle");
-  useEffect(() => {
-    if (prev.current === "analyzing" && state.phase === "plan_ready") scrollTo("sec-analyze");
-    if (prev.current === "generating" && state.phase === "generated") scrollTo("sec-generate");
-    if (prev.current === "idle" && state.phase === "analyzing") scrollTo("sec-analyze");
-    prev.current = state.phase;
-  }, [state.phase]);
-
-  const err = state.error;
-
   return (
-    <div className="min-h-screen">
-      <Header health={health} onRecheck={recheck} ai={state.ai} />
-      <div className="mx-auto flex max-w-[1500px] flex-col gap-6 px-4 py-6 sm:px-6 lg:flex-row lg:gap-8">
-        <Sidebar state={state} onReset={ws.reset} />
-
-        <main className="min-w-0 max-w-6xl flex-1 space-y-12">
-          <InputSection busy={state.phase === "analyzing"} offline={offline}
-            onPrompt={ws.analyzeFromPrompt} onSample={ws.analyzeFromSample} />
-
-          {err?.step === "analyze" && (
-            <ErrorPanel step="analyze" err={err.err} onRetry={ws.retry} onDismiss={ws.dismissError} busy={busy} />
-          )}
-
-          <AnalyzeSection state={state} />
-
-          {state.plan && state.phase !== "analyzing" && (
-            <>
-              <PlanSection plan={state.plan} ai={state.ai} generating={state.phase === "generating"} hasResult={!!state.result}
-                disabled={busy} onSetRows={ws.setTableRows} onGenerate={ws.runGenerate} />
-              {err?.step === "generate" && (
-                <ErrorPanel step="generate" err={err.err} onRetry={ws.retry} onDismiss={ws.dismissError} busy={busy} />
-              )}
-            </>
-          )}
-
-          {state.phase === "generating" && <GeneratingCard />}
-
-          {state.result && state.plan && (
-            <>
-              <GeneratedSection result={state.result} plan={state.plan} />
-              <ValidationSection report={state.result.validation} />
-              <QualitySection source={state.source} profile={state.profile} plan={state.plan} result={state.result} />
-              {err?.step === "export" && (
-                <ErrorPanel step="export" err={err.err} onRetry={ws.retry} onDismiss={ws.dismissError} busy={busy} />
-              )}
-              <ExportSection data={state.result.data} exportState={state.exportState}
-                busy={state.phase === "exporting"} onExport={ws.runExport} />
-            </>
-          )}
-        </main>
-      </div>
-    </div>
+    <Router>
+      <ToastProvider>
+        <AuthProvider>
+          <AppProvider>
+            <Routes />
+          </AppProvider>
+        </AuthProvider>
+      </ToastProvider>
+    </Router>
   );
 }

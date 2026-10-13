@@ -47,6 +47,7 @@ type Action =
   | { type: "export_start"; format: ExportFormat }
   | { type: "export_ok"; filename: string }
   | { type: "export_fail"; err: ApiError }
+  | { type: "plan_loaded"; plan: GenerationPlan; label: string }
   | { type: "set_rows"; table: string; rows: number | null }
   | { type: "dismiss_error" }
   | { type: "reset" };
@@ -57,6 +58,8 @@ function reducer(s: WorkspaceState, a: Action): WorkspaceState {
       return { ...initial, phase: "analyzing", source: a.source, sourceLabel: a.label, analyzeStartedAt: Date.now() };
     case "analyze_ok":
       return { ...s, phase: "plan_ready", plan: a.plan, ai: a.ai, profile: a.profile, profileWarnings: a.warnings, error: null };
+    case "plan_loaded": // a saved plan: no AI call, straight to review
+      return { ...initial, phase: "plan_ready", source: a.plan.source_mode, sourceLabel: a.label, plan: a.plan };
     case "analyze_fail":
       return { ...initial, error: { step: "analyze", err: a.err } };
     case "generate_start":
@@ -159,6 +162,7 @@ export function useWorkspace() {
     state,
     analyzeFromPrompt, analyzeFromSample, runGenerate, runExport,
     retry: () => retryRef.current?.(),
+    loadPlan: (plan: GenerationPlan, label: string) => dispatch({ type: "plan_loaded", plan, label }),
     setTableRows: (table: string, rows: number | null) => dispatch({ type: "set_rows", table, rows }),
     dismissError: () => dispatch({ type: "dismiss_error" }),
     reset: () => dispatch({ type: "reset" }),
@@ -168,20 +172,29 @@ export function useWorkspace() {
 // ------------------------------------------------------------------ backend health
 export type HealthState = { status: "checking" | "online" | "offline"; version?: string };
 
-export function useHealth(intervalMs = 15_000) {
+export function useHealth(onlineMs = 15_000, offlineMs = 5_000) {
   const [health, setHealth] = useState<HealthState>({ status: "checking" });
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const alive = useRef(true);
+  // Poll every 15 s while online and every 5 s while offline, so a sleeping backend is picked up quickly once it wakes.
   const check = useCallback(async () => {
+    clearTimeout(timer.current);
+    let ok = false;
     try {
       const h = await getHealth();
-      setHealth({ status: h.status === "ok" ? "online" : "offline", version: h.version });
+      ok = h.status === "ok";
+      if (alive.current) setHealth({ status: ok ? "online" : "offline", version: h.version });
     } catch {
-      setHealth({ status: "offline" });
+      if (alive.current) setHealth({ status: "offline" });
     }
-  }, []);
+    if (alive.current) timer.current = setTimeout(check, ok ? onlineMs : offlineMs);
+  }, [onlineMs, offlineMs]);
   useEffect(() => {
+    alive.current = true;
     check();
-    const id = setInterval(check, intervalMs);
-    return () => clearInterval(id);
-  }, [check, intervalMs]);
+    const onFocus = () => check();
+    window.addEventListener("focus", onFocus);
+    return () => { alive.current = false; clearTimeout(timer.current); window.removeEventListener("focus", onFocus); };
+  }, [check]);
   return { health, recheck: check };
 }

@@ -6,21 +6,24 @@ import { cn } from "../lib/cn";
 import { fmtInt } from "../lib/format";
 import type { ExportState } from "../state/workspace";
 
-export function ExportSection({ data, exportState, busy, onExport }: {
+export function ExportSection({ data, exportState, busy, onExport, defaultFormat = "auto" }: {
   data: GeneratedData; exportState: ExportState; busy: boolean; onExport: (f: ExportFormat, filename: string) => void;
+  defaultFormat?: "auto" | ExportFormat;
 }) {
   const [filename, setFilename] = useState("synthora_export");
   const tables = Object.keys(data);
   const multi = tables.length > 1;
   const totalRows = Object.values(data).reduce((n, r) => n + r.length, 0);
   const preparing = exportState.status === "preparing";
+  // Highlighted format: the user's default if it works for this dataset (CSV needs a single table), else the sensible one.
+  const pick: ExportFormat = defaultFormat !== "auto" && !(defaultFormat === "csv" && multi) ? defaultFormat : multi ? "zip" : "csv";
 
   const opts: { fmt: ExportFormat; title: string; desc: string; icon: React.ReactNode; disabled: boolean; primary: boolean; note?: string }[] = [
-    { fmt: "csv", title: "CSV", icon: <FileSpreadsheet className="size-5" />, disabled: multi, primary: !multi,
+    { fmt: "csv", title: "CSV", icon: <FileSpreadsheet className="size-5" />, disabled: multi, primary: pick === "csv",
       desc: "One comma-separated file, UTF-8 with header.", note: multi ? "Single-table datasets only — use ZIP for several tables." : undefined },
-    { fmt: "json", title: "JSON", icon: <Braces className="size-5" />, disabled: false, primary: false,
+    { fmt: "json", title: "JSON", icon: <Braces className="size-5" />, disabled: false, primary: pick === "json",
       desc: `All ${tables.length} table${multi ? "s" : ""} in one file, keyed by table name.` },
-    { fmt: "zip", title: "ZIP", icon: <FileArchive className="size-5" />, disabled: false, primary: multi,
+    { fmt: "zip", title: "ZIP", icon: <FileArchive className="size-5" />, disabled: false, primary: pick === "zip",
       desc: multi ? "One CSV per table plus data.json — best for relational data." : "CSV plus data.json in one archive." },
   ];
 

@@ -1,11 +1,12 @@
 import { FileSpreadsheet, MessageSquareText, Sparkles, Trash2, UploadCloud, WifiOff } from "lucide-react";
 import { useRef, useState, type DragEvent } from "react";
-import type { SampleControls } from "../api/client";
+import { API_BASE, type SampleControls } from "../api/client";
 import type { AnalyzeRequest } from "../api/types";
 import { Button, Callout, Card, Label, SectionTitle, Segmented, Textarea } from "../components/ui";
 import { cn } from "../lib/cn";
 import { fmtBytes } from "../lib/format";
-import { ControlsFields, defaultControls, parseControls, type Controls } from "./ControlsFields";
+import { useApp } from "../state/AppContext";
+import { ControlsFields, parseControls } from "./ControlsFields";
 
 const MAX_BYTES = 10 * 1024 * 1024;
 
@@ -22,16 +23,21 @@ export function InputSection({ busy, offline, onPrompt, onSample }: {
   onPrompt: (req: AnalyzeRequest) => void;
   onSample: (file: File, c: SampleControls) => void;
 }) {
-  const [tab, setTab] = useState<Tab>("prompt");
-  const [prompt, setPrompt] = useState("");
-  const [instruction, setInstruction] = useState("");
-  const [file, setFile] = useState<File | null>(null);
+  // The draft lives in app state, so typed text and the chosen file survive navigating to Settings and back.
+  const { draft, patchDraft } = useApp();
+  const { tab, prompt, instruction, file, controls } = draft;
+  const setTab = (v: Tab) => patchDraft({ tab: v });
+  const setPrompt = (v: string) => patchDraft({ prompt: v });
+  const setInstruction = (v: string) => patchDraft({ instruction: v });
+  const setFile = (v: File | null) => patchDraft({ file: v });
+  const setControls = (c: typeof controls) => patchDraft({ controls: c });
   const [fileError, setFileError] = useState<string | null>(null);
-  const [controls, setControls] = useState<Controls>(defaultControls);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const disabled = busy;
   const blocked = busy || offline;
+  const isLocalApi = /^https?:\/\/(localhost|127\.0\.0\.1)/.test(API_BASE);
+  const apiHost = API_BASE.replace(/^https?:\/\//, "");
 
   const submitPrompt = () => {
     const p = parseControls(controls);
@@ -74,7 +80,11 @@ export function InputSection({ busy, offline, onPrompt, onSample }: {
         <div className="space-y-5 p-5">
           {offline && (
             <Callout tone="warning" title="Backend offline">
-              Start the API (<code className="font-mono text-xs">uvicorn app.main:app --port 8000</code> in <code className="font-mono text-xs">backend/</code>) — this page reconnects automatically.
+              {isLocalApi ? (
+                <>Start the API (<code className="font-mono text-xs">uvicorn app.main:app --port 8000</code> in <code className="font-mono text-xs">backend/</code>) — this page reconnects automatically.</>
+              ) : (
+                <>The backend at <code className="font-mono text-xs">{apiHost}</code> is not responding yet. Hosted backends can take up to a minute to wake up; this page keeps retrying automatically.</>
+              )}
             </Callout>
           )}
 

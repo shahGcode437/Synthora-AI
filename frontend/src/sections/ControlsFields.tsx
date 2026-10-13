@@ -18,7 +18,7 @@ export const defaultControls: Controls = {
   targetRows: "", locale: "", customLocale: "", edge: "ai_recommended", privacy: "auto", seed: "",
 };
 
-const LOCALES: { value: string; label: string }[] = [
+export const LOCALES: { value: string; label: string }[] = [
   { value: "", label: "Auto (AI decides)" },
   { value: "en_PK", label: "Pakistan · en_PK" },
   { value: "en_US", label: "United States · en_US" },
@@ -33,7 +33,7 @@ const LOCALES: { value: string; label: string }[] = [
   { value: "__custom", label: "Other…" },
 ];
 
-const EDGE: { value: EdgeCaseMode; label: string; hint: string }[] = [
+export const EDGE: { value: EdgeCaseMode; label: string; hint: string }[] = [
   { value: "ai_recommended", label: "AI Recommended", hint: "Domain-aware cases chosen by the AI" },
   { value: "none", label: "None", hint: "Only clean, typical records" },
   { value: "low", label: "Low", hint: "~2% edge cases" },
@@ -42,7 +42,7 @@ const EDGE: { value: EdgeCaseMode; label: string; hint: string }[] = [
   { value: "custom", label: "Custom", hint: "Uses the AI's proposed rates as-is" },
 ];
 
-const PRIVACY: { value: PrivacyMode; label: string; hint: string }[] = [
+export const PRIVACY: { value: PrivacyMode; label: string; hint: string }[] = [
   { value: "auto", label: "Auto", hint: "Synthesize identifying fields by default" },
   { value: "safe_default", label: "Safe default", hint: "Force synthesis for direct identifiers and sensitive data" },
   { value: "none", label: "None", hint: "Plan no privacy actions (values are still synthetic)" },

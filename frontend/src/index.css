@@ -69,3 +69,71 @@ input[type="number"]::-webkit-inner-spin-button { opacity: 0.4; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
 }
+
+/* ================= Synthora application shell, landing and themes ================= */
+:root { --grid-line: rgb(255 255 255 / 0.022); }
+
+html[data-theme="light"] {
+  --color-canvas: #f5f7fa; --color-panel: #ffffff; --color-panel-2: #f1f4f8; --color-panel-3: #e6ebf1;
+  --color-line: #dde3ea; --color-line-strong: #c3ccd7; --color-fg: #0f1720; --color-fg-dim: #384453; --color-fg-mute: #5f6b7a;
+  --color-accent: #0d9488; --color-accent-strong: #0f766e; --color-accent-soft: #0f766e;
+  --grid-line: rgb(15 23 32 / 0.05);
+  /* status colors tuned for light surfaces */
+  --color-rose-300: #be123c; --color-rose-400: #e11d48; --color-emerald-300: #047857; --color-emerald-400: #059669;
+  --color-amber-300: #b45309; --color-amber-400: #d97706; --color-sky-300: #0369a1; --color-sky-400: #0284c7;
+  --color-violet-300: #6d28d9; --color-indigo-300: #4338ca; --color-pink-300: #be185d; --color-cyan-300: #0e7490;
+}
+html[data-theme="light"] body { background-image: radial-gradient(900px 380px at 78% -8%, rgb(13 148 136 / 0.07), transparent 70%); }
+html[data-density="compact"] { font-size: 14.5px; }
+
+.app-bg, .landing-bg { position: relative; isolation: isolate; }
+.app-bg::before, .landing-bg::before {
+  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background-image: linear-gradient(var(--grid-line) 1px, transparent 1px), linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 56px 56px;
+  -webkit-mask-image: radial-gradient(ellipse 85% 65% at 50% 0%, #000 25%, transparent 78%);
+  mask-image: radial-gradient(ellipse 85% 65% at 50% 0%, #000 25%, transparent 78%);
+}
+.landing-bg::after {
+  content: ""; position: absolute; inset: 0 0 auto 0; height: 760px; z-index: -1; pointer-events: none;
+  background: radial-gradient(55% 60% at 72% 0%, rgb(45 212 191 / 0.16), transparent 70%), radial-gradient(40% 50% at 8% 8%, rgb(56 189 248 / 0.08), transparent 70%);
+}
+
+.glass {
+  background: color-mix(in srgb, var(--color-panel) 72%, transparent);
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  border: 1px solid var(--color-line-strong);
+  box-shadow: 0 24px 48px -28px rgb(0 0 0 / 0.65), inset 0 1px 0 rgb(255 255 255 / 0.05);
+}
+html[data-theme="light"] .glass { box-shadow: 0 18px 40px -26px rgb(15 23 32 / 0.3), inset 0 1px 0 rgb(255 255 255 / 0.8); }
+
+.depth-card { transition: transform 0.22s cubic-bezier(0.2, 0.7, 0.2, 1), box-shadow 0.22s, border-color 0.22s; }
+.depth-card:hover {
+  transform: translateY(-4px);
+  border-color: color-mix(in srgb, var(--color-accent) 40%, var(--color-line-strong));
+  box-shadow: 0 30px 60px -30px rgb(0 0 0 / 0.6), 0 0 0 1px rgb(45 212 191 / 0.08);
+}
+
+.scene { transform-style: preserve-3d; transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); transition: transform 0.18s ease-out; }
+.scene > * { transform-style: preserve-3d; }
+@keyframes floaty { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-9px); } }
+.float-a { animation: floaty 7s ease-in-out infinite; }
+.float-b { animation: floaty 9s ease-in-out -2s infinite; }
+.float-c { animation: floaty 8s ease-in-out -4s infinite; }
+@keyframes dash { to { stroke-dashoffset: -44; } }
+.flow-line { animation: dash 2.4s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin-slow { animation: spin 12s linear infinite; }
+@keyframes rowin { 0%, 10% { opacity: 0; transform: translateY(4px); } 25%, 85% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+.row-in { animation: rowin 6s ease-in-out infinite; }
+
+@keyframes routein { from { opacity: 0; transform: translateX(12px); } to { opacity: 1; transform: none; } }
+.route-enter { animation: routein 0.3s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+@keyframes drawerin { from { transform: translateX(-100%); } to { transform: none; } }
+.drawer-in { animation: drawerin 0.25s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+
+/* user preferences from Settings */
+html[data-motion="off"] *, html[data-motion="off"] *::before, html[data-motion="off"] *::after { animation: none !important; transition: none !important; }
+html[data-depth="reduced"] .scene { transform: none !important; }
+html[data-depth="reduced"] .float-a, html[data-depth="reduced"] .float-b, html[data-depth="reduced"] .float-c { animation: none; }
+html[data-depth="reduced"] .depth-card:hover { transform: none; }
